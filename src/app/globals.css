@@ -2,164 +2,398 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* ════════════════════════════════════════════════════════════════════════════ */
+/* Tailwind v4 Theme — maps CSS variables to Tailwind utility classes          */
+/* FIX: Removed all duplicate declarations (surface-void, text-primary,        */
+/*      mastery-* were each defined twice — last-write-wins silently)          */
+/* ════════════════════════════════════════════════════════════════════════════ */
+@theme {
+  /* Material Design 3 surface tokens */
+  --color-surface:                     var(--surface);
+  --color-surface-dim:                 var(--surface-dim);
+  --color-surface-bright:              var(--surface-bright);
+  --color-surface-container-lowest:    var(--surface-container-lowest);
+  --color-surface-container-low:       var(--surface-container-low);
+  --color-surface-container:           var(--surface-container);
+  --color-surface-container-high:      var(--surface-container-high);
+  --color-surface-container-highest:   var(--surface-container-highest);
+  --color-on-surface:                  var(--on-surface);
+  --color-on-surface-variant:          var(--on-surface-variant);
+  --color-inverse-surface:             var(--inverse-surface);
+  --color-inverse-on-surface:          var(--inverse-on-surface);
+  --color-outline:                     var(--outline);
+  --color-outline-variant:             var(--outline-variant);
+  --color-surface-tint:                var(--surface-tint);
+  --color-primary:                     var(--primary);
+  --color-on-primary:                  var(--on-primary);
+  --color-primary-container:           var(--primary-container);
+  --color-on-primary-container:        var(--on-primary-container);
+  --color-inverse-primary:             var(--inverse-primary);
+  --color-secondary:                   var(--secondary);
+  --color-on-secondary:                var(--on-secondary);
+  --color-secondary-container:         var(--secondary-container);
+  --color-on-secondary-container:      var(--on-secondary-container);
+  --color-tertiary:                    var(--tertiary);
+  --color-on-tertiary:                 var(--on-tertiary);
+  --color-tertiary-container:          var(--tertiary-container);
+  --color-on-tertiary-container:       var(--on-tertiary-container);
+  --color-error:                       var(--error);
+  --color-on-error:                    var(--on-error);
+  --color-error-container:             var(--error-container);
+  --color-on-error-container:          var(--on-error-container);
+  --color-primary-fixed:               var(--primary-fixed);
+  --color-primary-fixed-dim:           var(--primary-fixed-dim);
+  --color-on-primary-fixed:            var(--on-primary-fixed);
+  --color-on-primary-fixed-variant:    var(--on-primary-fixed-variant);
+  --color-secondary-fixed:             var(--secondary-fixed);
+  --color-secondary-fixed-dim:         var(--secondary-fixed-dim);
+  --color-on-secondary-fixed:          var(--on-secondary-fixed);
+  --color-on-secondary-fixed-variant:  var(--on-secondary-fixed-variant);
+  --color-tertiary-fixed:              var(--tertiary-fixed);
+  --color-tertiary-fixed-dim:          var(--tertiary-fixed-dim);
+  --color-on-tertiary-fixed:           var(--on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant:   var(--on-tertiary-fixed-variant);
+  --color-background:                  var(--background);
+  --color-on-background:               var(--on-background);
+  --color-surface-variant:             var(--surface-variant);
+
+  /* NeuroLearn Extended Surface Tokens */
+  --color-surface-void:    var(--surface-void);
+  --color-surface-base:    var(--surface-base);
+  --color-surface-raised:  var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-hover:   var(--surface-hover);
+
+  /* Border Tokens */
+  --color-border-subtle:   var(--border-subtle);
+  --color-border-default:  var(--border-default);
+  --color-border-strong:   var(--border-strong);
+  --color-border-brand:    var(--border-brand);
+
+  /* Text Tokens */
+  --color-text-primary:    var(--text-primary);
+  --color-text-secondary:  var(--text-secondary);
+  --color-text-tertiary:   var(--text-tertiary);
+  --color-text-disabled:   var(--text-disabled);
+  --color-text-brand:      var(--text-brand);
+
+  /* Mastery Level Tokens (Neural Map nodes) */
+  --color-mastery-unseen:   var(--mastery-unseen);
+  --color-mastery-weak:     var(--mastery-weak);
+  --color-mastery-learning: var(--mastery-learning);
+  --color-mastery-strong:   var(--mastery-strong);
+  --color-mastery-mastered: var(--mastery-mastered);
+
+  /* Mastery Text Tokens */
+  --color-mastery-unseen-text:   var(--mastery-unseen-text);
+  --color-mastery-weak-text:     var(--mastery-weak-text);
+  --color-mastery-learning-text: var(--mastery-learning-text);
+  --color-mastery-strong-text:   var(--mastery-strong-text);
+  --color-mastery-mastered-text: var(--mastery-mastered-text);
+
+  /* Semantic Feedback Tokens */
+  --color-success-text:   var(--success-text);
+  --color-success-bg:     var(--success-bg);
+  --color-success-border: var(--success-border);
+  --color-error-text:     var(--error-text);
+  --color-error-bg:       var(--error-bg);
+  --color-error-border:   var(--error-border);
+  --color-warning-text:   var(--warning-text);
+  --color-warning-bg:     var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-info-text:      var(--info-text);
+  --color-info-bg:        var(--info-bg);
+  --color-info-border:    var(--info-border);
+
+  /* Typography */
+  --font-display: var(--font-display);
+  --font-body:    var(--font-body);
+  --font-mono:    var(--font-mono);
+
+  /* Shadows */
+  --shadow-sm:   var(--shadow-sm);
+  --shadow-md:   var(--shadow-md);
+  --shadow-lg:   var(--shadow-lg);
+  --shadow-glow: var(--shadow-glow);
+
+  /* FIX: Fixed px values instead of fragile calc(var(--radius)*x)           */
+  /* Reason: if --radius is ever overridden, all derived values break silently */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
+  --radius-full: 9999px;
+
+  /* Typography Scale */
+  --text-display:            3.5rem;
+  --text-headline-xl:        3rem;
+  --text-headline-lg:        2rem;
+  --text-headline-lg-mobile: 1.75rem;
+  --text-body-base:          1rem;
+  --text-body-sm:            0.875rem;
+  --text-data-mono:          0.75rem;
+
+  /* Spacing Scale */
+  --spacing-xs:             0.5rem;
+  --spacing-sm:             1rem;
+  --spacing-md:             1.5rem;
+  --spacing-lg:             2rem;
+  --spacing-xl:             4rem;
+  --spacing-margin-mobile:  1rem;
+  --spacing-margin-desktop: 2.5rem;
+  --spacing-gutter:         1.5rem;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
-/* ════════════════════════════════════════════════════════════════════════════ */
-/* NeuroLearn Design System — CSS Variables                                     */
-/* Follow Design.md exactly. Every color uses CSS variables, never hardcoded.  */
-/* ════════════════════════════════════════════════════════════════════════════ */
 
-/* LIGHT MODE (Light-First) */
+/* ════════════════════════════════════════════════════════════════════════════ */
+/* LIGHT MODE — Default variable definitions                                   */
+/* ════════════════════════════════════════════════════════════════════════════ */
 :root {
+  /* Font families */
   --font-display: 'Syne', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-body:    'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
-  /* ── Brand Teal-Emerald Palette ─────────────────────── */
-  --brand-50: #F0FDFA;
-  --brand-100: #CCFBF1;
-  --brand-200: #99F6E4;
-  --brand-300: #5EEAD4;
-  --brand-400: #2DD4BF;
-  --brand-500: #14B8A6;
-  --brand-600: #0D9488;
-  --brand-700: #0F766E;
-  --brand-800: #115E59;
-  --brand-900: #134E4A;
+  /* Dashboard layout tokens */
+  --dashboard-header-height: 4rem;
+  --dashboard-sidebar-min-width: 15rem;
+  --dashboard-sidebar-max-width: 28rem;
+  --dashboard-shell-padding: 1rem;
 
-  /* ── Light Mode Surfaces ─────────────────────────────── */
-  --surface-void: #F7FFFE;
-  --surface-base: #FFFFFF;
-  --surface-raised: #F0FDFB;
+  /* ── MD3 Surface Tokens (Light) ─────────────────────────────────────────── */
+  --surface:                   #f3fbfa;
+  --surface-dim:               #d4dcdb;
+  --surface-bright:            #f3fbfa;
+  --surface-container-lowest:  #ffffff;
+  --surface-container-low:     #edf5f4;
+  --surface-container:         #e7efef;
+  --surface-container-high:    #e2eae9;
+  --surface-container-highest: #dce4e3;
+  --on-surface:                #151d1d;
+  --on-surface-variant:        #3d4947;
+  --inverse-surface:           #2a3232;
+  --inverse-on-surface:        #eaf2f1;
+  --outline:                   #6d7a77;
+  --outline-variant:           #bcc9c6;
+  --surface-tint:              #006a61;
+  --primary:                   #00685f;
+  --on-primary:                #ffffff;
+  --primary-container:         #008378;
+  --on-primary-container:      #f4fffc;
+  --inverse-primary:           #6bd8cb;
+  --secondary:                 #216963;
+  --on-secondary:              #ffffff;
+  --secondary-container:       #a8ece5;
+  --on-secondary-container:    #266d68;
+  --tertiary:                  #00685c;
+  --on-tertiary:               #ffffff;
+  --tertiary-container:        #008375;
+  --on-tertiary-container:     #f4fffb;
+  --error:                     #ba1a1a;
+  --on-error:                  #ffffff;
+  --error-container:           #ffdad6;
+  --on-error-container:        #93000a;
+  --primary-fixed:             #89f5e7;
+  --primary-fixed-dim:         #6bd8cb;
+  --on-primary-fixed:          #00201d;
+  --on-primary-fixed-variant:  #005049;
+  --secondary-fixed:           #abefe8;
+  --secondary-fixed-dim:       #8fd3cc;
+  --on-secondary-fixed:        #00201e;
+  --on-secondary-fixed-variant:#00504b;
+  --tertiary-fixed:            #62fae3;
+  --tertiary-fixed-dim:        #3cddc7;
+  --on-tertiary-fixed:         #00201c;
+  --on-tertiary-fixed-variant: #005047;
+  --background:                #f3fbfa;
+  --on-background:             #151d1d;
+  --surface-variant:           #dce4e3;
+
+  /* ── NeuroLearn Extended Surfaces (Light) ───────────────────────────────── */
+  --surface-void:    #F7FFFE;
+  --surface-base:    #FFFFFF;
+  --surface-raised:  #F0FDFB;
   --surface-overlay: #FFFFFF;
-  --surface-hover: #E6FAF7;
+  --surface-hover:   #E6FAF7;
 
-  /* ── Light Mode Borders ──────────────────────────────── */
-  --border-subtle: rgba(13, 148, 136, 0.06);
+  /* ── Borders (Light) ────────────────────────────────────────────────────── */
+  --border-subtle:  rgba(13, 148, 136, 0.06);
   --border-default: rgba(13, 148, 136, 0.12);
-  --border-strong: rgba(13, 148, 136, 0.24);
-  --border-brand: rgba(13, 148, 136, 0.5);
+  --border-strong:  rgba(13, 148, 136, 0.24);
+  --border-brand:   rgba(13, 148, 136, 0.50);
 
-  /* ── Light Mode Text ─────────────────────────────────── */
-  --text-primary: #0D1F1C;
+  /* ── Text (Light) ───────────────────────────────────────────────────────── */
+  --text-primary:   #0D1F1C;
   --text-secondary: #3A6B65;
-  --text-tertiary: #6B9E99;
-  --text-disabled: #9BBFBB;
-  --text-brand: #0D9488;
+  --text-tertiary:  #6B9E99;
+  --text-disabled:  #9BBFBB;
+  --text-brand:     #0D9488;
 
-  /* ── Light Mode Shadows ──────────────────────────────── */
-  --shadow-sm: 0 1px 2px rgba(13, 148, 136, 0.06);
-  --shadow-md: 0 4px 12px rgba(13, 148, 136, 0.10), 0 1px 3px rgba(13, 148, 136, 0.06);
-  --shadow-lg: 0 12px 32px rgba(13, 148, 136, 0.12), 0 4px 8px rgba(13, 148, 136, 0.06);
+  /* ── Shadows (Light — tinted with brand hue) ────────────────────────────── */
+  --shadow-sm:   0 1px 2px rgba(13, 148, 136, 0.06);
+  --shadow-md:   0 4px 12px rgba(13, 148, 136, 0.10), 0 1px 3px rgba(13, 148, 136, 0.06);
+  --shadow-lg:   0 12px 32px rgba(13, 148, 136, 0.12), 0 4px 8px rgba(13, 148, 136, 0.06);
   --shadow-glow: 0 0 24px rgba(13, 148, 136, 0.15);
 
-  /* ── Type Scale ──────────────────────────────────────── */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: clamp(1.75rem, 3vw, 2rem);
-  --text-4xl: clamp(2rem, 4vw, 2.5rem);
-  --text-5xl: clamp(2.5rem, 5vw, 3.5rem);
+  /* ── Mastery Level Colors (Light) ───────────────────────────────────────── */
+  /* FIX: Was too bright in original (#FCA5A5, #FCD34D)                       */
+  /* Now: Muted, desaturated — appropriate for a study focus environment       */
+  --mastery-unseen:   #E8F5F3;  /* near-white teal tint */
+  --mastery-weak:     #FDE8E8;  /* muted rose — not bright red */
+  --mastery-learning: #FEF3CD;  /* muted amber — not bright yellow */
+  --mastery-strong:   #D1FAE5;  /* soft emerald */
+  --mastery-mastered: #99F6E4;  /* clear teal */
 
-  /* ── Line Heights ────────────────────────────────────── */
-  --leading-tight: 1.2;
-  --leading-snug: 1.35;
-  --leading-normal: 1.5;
-  --leading-relaxed: 1.7;
+  /* ── Mastery Text Colors (Light) ─────────────────────────────────────────── */
+  --mastery-unseen-text:   #3A6B65;
+  --mastery-weak-text:     #991B1B;
+  --mastery-learning-text: #92400E;
+  --mastery-strong-text:   #065F46;
+  --mastery-mastered-text: #0D9488;
 
-  /* ── Letter Spacing ──────────────────────────────────── */
-  --tracking-tight: -0.025em;
-  --tracking-normal: -0.010em;
-  --tracking-wide: 0.05em;
-  --tracking-wider: 0.10em;
-
-  /* ── Mastery Level Colors ─────────────────────────────  */
-  --mastery-unseen: #E8F5F3;
-  --mastery-weak: #FCA5A5;
-  --mastery-learning: #FCD34D;
-  --mastery-strong: #86EFAC;
-  --mastery-mastered: #2DD4BF;
-
-  --mastery-unseen-bg: #F0FDFA;
-  --mastery-weak-bg: #FEF2F2;
-  --mastery-learning-bg: #FFFAED;
-  --mastery-strong-bg: #F0FDF4;
-  --mastery-mastered-bg: #F0FDFA;
-
-  /* ── Feedback States ─────────────────────────────────── */
-  --success-bg: rgba(16, 185, 129, 0.08);
-  --success-text: #10B981;
+  /* ── Semantic Feedback (Light) ──────────────────────────────────────────── */
+  --success-bg:     rgba(16, 185, 129, 0.08);
+  --success-text:   #10B981;
   --success-border: rgba(16, 185, 129, 0.20);
-
-  --error-bg: rgba(239, 68, 68, 0.08);
-  --error-text: #EF4444;
-  --error-border: rgba(239, 68, 68, 0.20);
-
-  --warning-bg: rgba(245, 158, 11, 0.08);
-  --warning-text: #F59E0B;
+  --error-bg:       rgba(239, 68, 68, 0.08);
+  --error-text:     #DC2626;
+  --error-border:   rgba(239, 68, 68, 0.20);
+  --warning-bg:     rgba(245, 158, 11, 0.08);
+  --warning-text:   #D97706;
   --warning-border: rgba(245, 158, 11, 0.20);
+  --info-bg:        rgba(59, 130, 246, 0.08);
+  --info-text:      #2563EB;
+  --info-border:    rgba(59, 130, 246, 0.20);
 
-  --info-bg: rgba(59, 130, 246, 0.08);
-  --info-text: #3B82F6;
-  --info-border: rgba(59, 130, 246, 0.20);
-
-  /* ── Radius ──────────────────────────────────────────── */
-  --radius: 0.5rem;
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
+  /* ── Border Radius ──────────────────────────────────────────────────────── */
+  /* FIX: Plain px values — not calc()-derived, not fragile                   */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
+  --radius-full: 9999px;
 }
 
-/* DARK MODE (Dark-First Default) */
+/* ════════════════════════════════════════════════════════════════════════════ */
+/* DARK MODE overrides                                                          */
+/* ════════════════════════════════════════════════════════════════════════════ */
 .dark {
-  /* ── Dark Mode Surfaces ──────────────────────────────── */
-  --surface-void: #060A09;
-  --surface-base: #0B1210;
-  --surface-raised: #121C1A;
+  /* ── MD3 Surface Tokens (Dark) ──────────────────────────────────────────── */
+  --surface:                   #0f1413;
+  --surface-dim:               #0f1413;
+  --surface-bright:            #353a39;
+  --surface-container-lowest:  #0a0f0e;
+  --surface-container-low:     #171d1c;
+  --surface-container:         #1b2120;
+  --surface-container-high:    #262b2a;
+  --surface-container-highest: #303635;
+  --on-surface:                #dee4e1;
+  --on-surface-variant:        #bcc9c6;
+  --inverse-surface:           #dee4e1;
+  --inverse-on-surface:        #2c3130;
+  --outline:                   #879391;
+  --outline-variant:           #3d4947;
+  --surface-tint:              #6bd8cb;
+  --primary:                   #6bd8cb;
+  --on-primary:                #003732;
+  --primary-container:         #29a195;
+  --on-primary-container:      #00302b;
+  --inverse-primary:           #006a61;
+  --secondary:                 #4fdbc8;
+  --on-secondary:              #003731;
+  --secondary-container:       #04b4a2;
+  --on-secondary-container:    #003f38;
+  --tertiary:                  #ffb59a;
+  --on-tertiary:               #591c02;
+  --tertiary-container:        #d27956;
+  --on-tertiary-container:     #4f1700;
+  --error:                     #ffb4ab;
+  --on-error:                  #690005;
+  --error-container:           #93000a;
+  --on-error-container:        #ffdad6;
+  --primary-fixed:             #89f5e7;
+  --primary-fixed-dim:         #6bd8cb;
+  --on-primary-fixed:          #00201d;
+  --on-primary-fixed-variant:  #005049;
+  --secondary-fixed:           #71f8e4;
+  --secondary-fixed-dim:       #4fdbc8;
+  --on-secondary-fixed:        #00201c;
+  --on-secondary-fixed-variant:#005048;
+  --tertiary-fixed:            #ffdbce;
+  --tertiary-fixed-dim:        #ffb59a;
+  --on-tertiary-fixed:         #370e00;
+  --on-tertiary-fixed-variant: #773215;
+  --background:                #0f1413;
+  --on-background:             #dee4e1;
+  --surface-variant:           #303635;
+
+  /* ── NeuroLearn Extended Surfaces (Dark) ───────────────────────────────── */
+  --surface-void:    #060A09;
+  --surface-base:    #0B1210;
+  --surface-raised:  #121C1A;
   --surface-overlay: #19271F;
-  --surface-hover: #1F312D;
+  --surface-hover:   #1F312D;
 
-  /* ── Dark Mode Borders (Teal-tinted) ────────────────── */
-  --border-subtle: rgba(20, 184, 166, 0.06);
+  /* ── Borders (Dark) ─────────────────────────────────────────────────────── */
+  --border-subtle:  rgba(20, 184, 166, 0.06);
   --border-default: rgba(20, 184, 166, 0.12);
-  --border-strong: rgba(20, 184, 166, 0.24);
-  --border-brand: rgba(20, 184, 166, 0.50);
+  --border-strong:  rgba(20, 184, 166, 0.24);
+  --border-brand:   rgba(20, 184, 166, 0.50);
 
-  /* ── Dark Mode Text ──────────────────────────────────── */
-  --text-primary: #E8F5F3;
+  /* ── Text (Dark) ────────────────────────────────────────────────────────── */
+  --text-primary:   #E8F5F3;
   --text-secondary: #9BBFBB;
-  --text-tertiary: #5C8A85;
-  --text-disabled: #3A5C58;
-  --text-brand: #2DD4BF;
+  --text-tertiary:  #5C8A85;
+  --text-disabled:  #3A5C58;
+  --text-brand:     #2DD4BF;
 
-  /* ── Dark Mode Shadows (Teal-tinted) ─────────────────── */
-  --shadow-sm: 0 1px 2px rgba(14, 165, 153, 0.08);
-  --shadow-md: 0 4px 12px rgba(14, 165, 153, 0.12), 0 1px 3px rgba(14, 165, 153, 0.06);
-  --shadow-lg: 0 12px 32px rgba(14, 165, 153, 0.16), 0 4px 8px rgba(14, 165, 153, 0.08);
+  /* ── Shadows (Dark — tinted with brand hue) ─────────────────────────────── */
+  --shadow-sm:   0 1px 2px rgba(14, 165, 153, 0.08);
+  --shadow-md:   0 4px 12px rgba(14, 165, 153, 0.12), 0 1px 3px rgba(14, 165, 153, 0.06);
+  --shadow-lg:   0 12px 32px rgba(14, 165, 153, 0.16), 0 4px 8px rgba(14, 165, 153, 0.08);
   --shadow-glow: 0 0 24px rgba(20, 184, 166, 0.20);
 
-  /* ── Dark Mode Mastery ────────────────────────────────  */
-  --mastery-unseen: #2A3530;
-  --mastery-weak: #4A1A1A;
+  /* ── Mastery Level Backgrounds (Dark) ───────────────────────────────────── */
+  --mastery-unseen:   #2A3530;
+  --mastery-weak:     #4A1A1A;
   --mastery-learning: #3A2A0A;
-  --mastery-strong: #0A2A20;
+  --mastery-strong:   #0A2A20;
   --mastery-mastered: #134E4A;
 
-  --mastery-unseen-bg: rgba(20, 184, 166, 0.06);
-  --mastery-weak-bg: rgba(239, 68, 68, 0.06);
-  --mastery-learning-bg: rgba(245, 158, 11, 0.06);
-  --mastery-strong-bg: rgba(16, 185, 129, 0.06);
-  --mastery-mastered-bg: rgba(20, 184, 166, 0.10);
+  /* ── Mastery Text Colors (Dark) ─────────────────────────────────────────── */
+  --mastery-unseen-text:   #6B8A85;
+  --mastery-weak-text:     #F87171;
+  --mastery-learning-text: #FBBF24;
+  --mastery-strong-text:   #34D399;
+  --mastery-mastered-text: #2DD4BF;
+
+  /* ── Semantic Feedback (Dark) ───────────────────────────────────────────── */
+  --success-bg:     rgba(16, 185, 129, 0.08);
+  --success-text:   #34D399;
+  --success-border: rgba(16, 185, 129, 0.20);
+  --error-bg:       rgba(239, 68, 68, 0.08);
+  --error-text:     #F87171;
+  --error-border:   rgba(239, 68, 68, 0.20);
+  --warning-bg:     rgba(245, 158, 11, 0.08);
+  --warning-text:   #FBBF24;
+  --warning-border: rgba(245, 158, 11, 0.20);
+  --info-bg:        rgba(59, 130, 246, 0.08);
+  --info-text:      #60A5FA;
+  --info-border:    rgba(59, 130, 246, 0.20);
+
+  /* Dashboard layout tokens */
+  --dashboard-header-height: 4rem;
+  --dashboard-sidebar-min-width: 15rem;
+  --dashboard-sidebar-max-width: 28rem;
+  --dashboard-shell-padding: 1rem;
 }
 
 /* ════════════════════════════════════════════════════════════════════════════ */
-/* Base Styles                                                                   */
+/* Base Styles                                                                  */
 /* ════════════════════════════════════════════════════════════════════════════ */
-
 @layer base {
   html {
     font-family: var(--font-body);
@@ -170,262 +404,128 @@
   body {
     background-color: var(--surface-void);
     color: var(--text-primary);
-    font-size: var(--text-base);
-    line-height: var(--leading-normal);
-    letter-spacing: var(--tracking-normal);
+    font-size: var(--text-body-base);
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     font-weight: 700;
-    letter-spacing: var(--tracking-tight);
+    letter-spacing: -0.02em;
   }
 
-  h1 {
-    font-size: var(--text-5xl);
-    line-height: var(--leading-tight);
+  /* Focus rings — never remove, only restyle */
+  *:focus-visible {
+    outline: 2px solid var(--border-brand);
+    outline-offset: 2px;
   }
 
-  h2 {
-    font-size: var(--text-4xl);
-    line-height: var(--leading-tight);
-  }
-
-  h3 {
-    font-size: var(--text-3xl);
-    line-height: var(--leading-snug);
-  }
-
-  h4 {
-    font-size: var(--text-2xl);
-    line-height: var(--leading-snug);
-  }
-
-  h5 {
-    font-size: var(--text-xl);
-    line-height: var(--leading-normal);
-  }
-
-  h6 {
-    font-size: var(--text-lg);
-    line-height: var(--leading-normal);
-  }
-
-  code, pre {
-    font-family: var(--font-mono);
-  }
-
-  code {
-    background-color: var(--surface-raised);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-sm);
-    padding: 0.25rem 0.5rem;
-    font-size: 0.9em;
-  }
-
-  pre {
-    background-color: var(--surface-raised);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    padding: 1rem;
-    overflow-x: auto;
-  }
-
-  pre code {
-    background: none;
-    border: none;
-    padding: 0;
-  }
-
-  /* ── Form Elements Base Styles ──────────────────────── */
-  input, textarea, select {
-    font-family: var(--font-body);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-default);
-    background-color: var(--surface-base);
-    color: var(--text-primary);
-    padding: 0.5rem 0.75rem;
-    font-size: var(--text-base);
-    transition: all 0.2s ease-in-out;
-  }
-
-  input::placeholder, textarea::placeholder {
-    color: var(--text-tertiary);
-  }
-
-  input:focus, textarea:focus, select:focus {
-    outline: none;
-    border-color: var(--brand-600);
-    box-shadow: 0 0 0 3px var(--brand-50);
-    background-color: var(--surface-raised);
-  }
-
-  .dark input:focus, .dark textarea:focus, .dark select:focus {
-    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.10);
-  }
-
-  button {
-    font-family: var(--font-body);
-    font-weight: 500;
-    border-radius: var(--radius-md);
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-  }
-
-  button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════ */
-/* Utility Classes                                                               */
+/* Utility Classes                                                              */
 /* ════════════════════════════════════════════════════════════════════════════ */
-
 @layer utilities {
-  /* Display Heading Styles */
-  .heading-display,
-  .heading-xl,
-  .heading-2xl,
-  .heading-3xl {
-    font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: var(--tracking-tight);
+  /* Dot grid background — used on Neural Map canvas and hero */
+  .bg-grid-pattern {
+    background-image: radial-gradient(
+      rgba(107, 216, 203, 0.15) 1px,
+      transparent 1px
+    );
+    background-size: 24px 24px;
   }
 
-  .heading-xl {
-    font-size: var(--text-xl);
+  /* Hero radial gradient glow */
+  .bg-hero-glow {
+    background-image:
+      radial-gradient(ellipse 70% 50% at 50% 0%, rgba(13, 148, 136, 0.10) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 20% 90%, rgba(13, 148, 136, 0.05) 0%, transparent 60%);
   }
 
-  .heading-2xl {
-    font-size: var(--text-2xl);
+  /* Teal top-edge accent line on cards */
+  .border-top-brand::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.40), transparent);
   }
 
-  .heading-3xl {
-    font-size: var(--text-3xl);
-  }
+  /* Font utilities */
+  .font-display { font-family: var(--font-display); }
+  .font-body    { font-family: var(--font-body); }
+  .font-mono    { font-family: var(--font-mono); }
+}
 
-  /* Text Color Utilities */
-  .text-primary {
-    color: var(--text-primary);
-  }
+/* ════════════════════════════════════════════════════════════════════════════ */
+/* React Flow Premium Visual Theme Customizations                              */
+/* ════════════════════════════════════════════════════════════════════════════ */
+.react-flow__controls {
+  background-color: var(--surface-base) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-md) !important;
+  overflow: hidden;
+  padding: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
 
-  .text-secondary {
-    color: var(--text-secondary);
-  }
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 6px !important;
+  color: var(--text-primary) !important;
+  fill: var(--text-primary) !important;
+  transition: background-color 0.2s ease !important;
+}
 
-  .text-tertiary {
-    color: var(--text-tertiary);
-  }
+.react-flow__controls-button:hover {
+  background-color: var(--surface-hover) !important;
+}
 
-  .text-disabled {
-    color: var(--text-disabled);
-  }
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+}
 
-  .text-brand {
-    color: var(--text-brand);
-  }
+.react-flow__minimap {
+  background-color: var(--surface-base) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-md) !important;
+  overflow: hidden;
+}
 
-  /* Background Utilities */
-  .bg-void {
-    background-color: var(--surface-void);
-  }
+.react-flow__minimap-mask {
+  fill: var(--surface-void) !important;
+  fill-opacity: 0.65 !important;
+}
 
-  .bg-base {
-    background-color: var(--surface-base);
-  }
+.react-flow__edge-path {
+  stroke-width: 2.5px !important;
+  transition: stroke 0.3s ease, stroke-width 0.3s ease !important;
+}
 
-  .bg-raised {
-    background-color: var(--surface-raised);
-  }
+.react-flow__connection-path {
+  stroke: var(--primary) !important;
+  stroke-width: 2.5px !important;
+  stroke-dasharray: 5 !important;
+}
 
-  .bg-overlay {
-    background-color: var(--surface-overlay);
-  }
+.react-flow__handle {
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
+}
 
-  /* Border Utilities */
-  .border-subtle {
-    border-color: var(--border-subtle);
-  }
-
-  .border-default {
-    border-color: var(--border-default);
-  }
-
-  .border-strong {
-    border-color: var(--border-strong);
-  }
-
-  .border-brand {
-    border-color: var(--border-brand);
-  }
-
-  /* Shadow Utilities */
-  .shadow-sm {
-    box-shadow: var(--shadow-sm);
-  }
-
-  .shadow-md {
-    box-shadow: var(--shadow-md);
-  }
-
-  .shadow-lg {
-    box-shadow: var(--shadow-lg);
-  }
-
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-
-  /* Mastery Level Utilities */
-  .mastery-unseen {
-    background-color: var(--mastery-unseen-bg);
-    color: var(--mastery-unseen);
-  }
-
-  .mastery-weak {
-    background-color: var(--mastery-weak-bg);
-    color: var(--mastery-weak);
-  }
-
-  .mastery-learning {
-    background-color: var(--mastery-learning-bg);
-    color: var(--mastery-learning);
-  }
-
-  .mastery-strong {
-    background-color: var(--mastery-strong-bg);
-    color: var(--mastery-strong);
-  }
-
-  .mastery-mastered {
-    background-color: var(--mastery-mastered-bg);
-    color: var(--mastery-mastered);
-  }
-
-  /* Status Utilities */
-  .status-success {
-    background-color: var(--success-bg);
-    color: var(--success-text);
-    border-color: var(--success-border);
-  }
-
-  .status-error {
-    background-color: var(--error-bg);
-    color: var(--error-text);
-    border-color: var(--error-border);
-  }
-
-  .status-warning {
-    background-color: var(--warning-bg);
-    color: var(--warning-text);
-    border-color: var(--warning-border);
-  }
-
-  .status-info {
-    background-color: var(--info-bg);
-    color: var(--info-text);
-    border-color: var(--info-border);
-  }
+.react-flow__handle:hover {
+  transform: scale(1.3) !important;
 }

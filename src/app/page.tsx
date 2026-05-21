@@ -5,6 +5,7 @@ import {
   ArchitectureSection,
   StudyInterfaceSection,
   MasteryDensitySection,
+  PricingSection,
 } from "@/components/landing";
 
 export default function Home() {
@@ -27,6 +28,9 @@ export default function Home() {
       
               {/* Mastery Density */}
               <MasteryDensitySection />
+              
+              {/* Pricing Section */}
+              <PricingSection />
             </main>
       
             <Footer />

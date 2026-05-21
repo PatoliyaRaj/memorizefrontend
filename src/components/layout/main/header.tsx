@@ -1,115 +1,59 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/form/Button';
-import { useTheme } from '@/hooks/useTheme';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import ThemeToggle from '@/components/common/theme-toggle';
+import { useAuthStore } from '@/stores/use-auth-store'
+import { useRouter } from 'next/navigation'
 
 export function Header() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { theme, toggleTheme } = useTheme();
+  const isAuthenticated = useAuthStore((s)=>s.isAuthenticated)
+  const user = useAuthStore((s)=>s.user)
+  const logout = useAuthStore((s)=>s.logout)
+  const router = useRouter()
+  const [mounted, setMounted] = React.useState(false)
 
-  const navItems = [
-    { label: 'Product', href: '#product' },
-    { label: 'Science', href: '#science' },
-    { label: 'Pricing', href: '#pricing' },
-  ];
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  function handleLogout(){
+    logout()
+    router.push('/')
+  }
+
+  const showAuthenticated = mounted && isAuthenticated
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-surface-void/80 backdrop-blur-md border-b border-border-subtle">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center group-hover:shadow-glow transition-all">
-              <span className="text-white font-display font-bold text-lg">M</span>
-            </div>
-            <span className="font-display font-bold text-lg text-text-primary hidden sm:inline">
-              Memorize
-            </span>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="text-text-secondary hover:text-text-primary transition-colors text-sm font-body"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 md:gap-4">
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-md hover:bg-surface-raised transition-colors"
-              aria-label="Toggle theme"
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-text-secondary" />
-              ) : (
-                <Moon className="w-5 h-5 text-text-secondary" />
-              )}
-            </button>
-
-            {/* CTA Button - Desktop */}
-            <Button
-              variant="primary"
-              size="sm"
-              className="hidden sm:inline-flex"
-              asChild
-            >
-              <Link href="/login">Start Learning</Link>
-            </Button>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-md hover:bg-surface-raised transition-colors"
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? (
-                <X className="w-5 h-5 text-text-primary" />
-              ) : (
-                <Menu className="w-5 h-5 text-text-primary" />
-              )}
-            </button>
-          </div>
+    <nav className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/20 shadow-sm">
+      <div className="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-md max-w-7xl mx-auto">
+        <Link href="/" className="font-display text-headline-lg-mobile font-bold tracking-tight text-primary">
+          Memorize
+        </Link>
+        <div className="hidden md:flex gap-lg items-center">
+          <Link className="text-primary font-bold border-b-2 border-primary pb-1 font-body-base text-body-base hover:text-primary-fixed hover:-translate-y-[1px] transition-all duration-300" href="#product">Product</Link>
+          <Link className="text-on-surface-variant font-body-base text-body-base hover:text-primary hover:-translate-y-[1px] transition-all duration-300" href="#science">Science</Link>
+          <Link className="text-on-surface-variant font-body-base text-body-base hover:text-primary hover:-translate-y-[1px] transition-all duration-300" href="#pricing">Pricing</Link>
         </div>
-
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <nav className="md:hidden pb-4 border-t border-border-subtle">
-            <div className="flex flex-col gap-3 pt-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="text-text-secondary hover:text-text-primary transition-colors text-sm font-body px-4 py-2 rounded hover:bg-surface-raised"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <Button
-                variant="primary"
-                size="sm"
-                className="w-full mx-4"
-                asChild
-              >
-                <Link href="/login">Start Learning</Link>
-              </Button>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          {!showAuthenticated ? (
+            <>
+              <Link href="/login" className="text-on-surface-variant">Sign in</Link>
+              <Link href="/signup" className="bg-primary text-on-primary px-lg py-sm rounded-lg font-body-sm text-body-sm font-bold scale-95">Sign up</Link>
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-text-secondary">{user?.name || user?.email}</div>
+              <button onClick={handleLogout} className="text-sm text-on-surface-variant">Sign out</button>
             </div>
-          </nav>
-        )}
+          )}
+
+          <Link href={showAuthenticated ? '/dashboard' : '/login'} className="bg-primary text-on-primary px-lg py-sm rounded-lg font-body-sm text-body-sm font-bold scale-95 active:scale-90 transition-all duration-300 hover:bg-primary-fixed hover:scale-100 hover:shadow-[0_0_20px_rgba(107,216,203,0.5)]">
+            Start Session
+          </Link>
+        </div>
       </div>
-    </header>
+    </nav>
   );
 }

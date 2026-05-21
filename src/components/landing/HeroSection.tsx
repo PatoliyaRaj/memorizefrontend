@@ -1,51 +1,35 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/form/Button';
 
 export function HeroSection() {
   return (
-    <section className="pt-32 pb-16 md:pt-48 md:pb-24 px-4 md:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto text-center space-y-8">
-        {/* Badge */}
-        <div className="inline-block">
-          <div className="px-3 py-1.5 rounded-full border border-border-default bg-surface-raised flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-brand-500"></span>
-            <span className="text-xs uppercase tracking-wider text-text-secondary font-mono">
-              Introduced to zfert
-            </span>
-          </div>
+    <section className="relative pt-32 pb-xl px-margin-mobile md:px-margin-desktop min-h-[921px] flex items-center justify-center bg-grid-pattern overflow-hidden">
+      {/* Ambient Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[radial-gradient(circle,rgba(107,216,203,0.12)_0%,transparent_70%)] rounded-full pointer-events-none animate-breathe"></div>
+      
+      <div className="max-w-4xl mx-auto text-center z-10 reveal-target is-revealed">
+        <div className="inline-flex items-center gap-sm px-md py-xs rounded-full bg-surface-raised border border-outline-variant mb-lg">
+          <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          <span className="font-data-mono text-data-mono text-primary uppercase tracking-widest">NeuroLearn V2 Live</span>
         </div>
-
-        {/* Headline */}
-        <div className="space-y-4">
-          <h1 className="heading-display text-4xl md:text-5xl lg:text-6xl leading-tight">
-            Memory, <span className="text-brand-400">Engineered</span>.
-          </h1>
-
-          <p className="text-base md:text-lg text-text-secondary leading-relaxed max-w-2xl mx-auto">
-            A scientific approach to spaced repetition. We use your forgetting curve
-            and neural-inspired algorithms to optimize study intervals, ensuring knowledge becomes permanent.
-          </p>
-        </div>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-          <Button
-            variant="primary"
-            size="lg"
-            asChild
-          >
-            <Link href="/study">Start Session</Link>
-          </Button>
-          <Button
-            variant="secondary"
-            size="lg"
-            asChild
-          >
-            <Link href="#science">Explore Science</Link>
-          </Button>
+        
+        <h1 className="font-display text-display md:text-[5rem] font-bold text-text-primary mb-md leading-tight tracking-tight">
+          Memory, <br className="md:hidden"/> Engineered.
+        </h1>
+        
+        <p className="font-body-base text-body-base md:text-xl text-text-secondary max-w-2xl mx-auto mb-xl leading-relaxed">
+          A scientific approach to cognitive retention. We map your learning patterns using neural-inspired algorithms to optimize study intervals, ensuring knowledge becomes permanent.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-md">
+          <Link href="/study" className="w-full sm:w-auto bg-primary text-on-primary px-xl py-md rounded-lg font-body-base text-body-base font-bold transition-all duration-300 hover:bg-primary-fixed hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(107,216,203,0.5)] active:scale-95 text-center">
+            Start Session
+          </Link>
+          <Link href="#science" className="w-full sm:w-auto border border-outline-variant text-text-primary px-xl py-md rounded-lg font-body-base text-body-base font-medium transition-all duration-300 hover:border-primary hover:text-primary hover:bg-primary/5 hover:-translate-y-1 active:scale-95 text-center">
+            Explore Science
+          </Link>
         </div>
       </div>
     </section>

@@ -55,22 +55,28 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
         {/* Apply stored theme before paint — prevents flash of wrong theme */}
-        <Script id="theme-init" strategy="beforeInteractive">{`
-          (function() {
-            try {
-              var stored = localStorage.getItem('memorize-theme');
-              var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
-              if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-              } else {
-                document.documentElement.classList.remove('dark');
-              }
-            } catch(e) {
-              document.documentElement.classList.add('dark');
-            }
-          })();
-        `}</Script>
+        <script
+          id="theme-init"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('memorize-theme');
+                  var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch(e) {
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col bg-surface-void text-text-primary transition-colors duration-200">
         <LenisProvider>
