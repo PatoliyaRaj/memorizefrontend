@@ -376,7 +376,7 @@ export default function BasketPage() {
       {/* Edit Subject Modal */}
       {editingSubject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-void/80 p-4 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-outline-variant/30 bg-surface-raised p-6 shadow-2xl">
+          <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-outline-variant/30 bg-surface-raised p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
               <h3 className="font-display text-xl text-text-primary">Edit Subject</h3>
               <button
@@ -466,7 +466,7 @@ export default function BasketPage() {
       {/* Delete Subject Confirmation Modal */}
       {deletingSubject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-void/80 p-4 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl border border-red-500/25 bg-surface-raised p-6 shadow-2xl">
+          <div className="w-full max-w-2xl rounded-2xl border border-red-500/25 bg-surface-raised p-6 shadow-2xl">
             <h3 className="font-display text-xl text-red-400 flex items-center gap-2">
               <span className="material-symbols-outlined text-red-500">warning</span>
               Delete Subject

@@ -24,3 +24,9 @@ export async function createEdge(payload: {
   const { data } = await apiClient.post(`/api/edges`, payload)
   return data as VisualEdge
 }
+
+export async function deleteEdge(id: string) {
+  const { data } = await apiClient.delete(`/api/edges/${id}`)
+  return data
+}
+

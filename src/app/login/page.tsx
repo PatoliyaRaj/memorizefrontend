@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { login } from "@/services/auth-service";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { toastError, toastSuccess } from "@/lib/toast";
+import {MailIcon } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter();
@@ -124,7 +125,8 @@ export default function LoginPage() {
                 </label>
                 <div className="relative transition-shadow focus-within:shadow-[0_0_12px_rgba(107,216,203,0.15)]">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <span className="material-symbols-outlined text-outline">alternate_email</span>
+                    {/* <span className="material-symbols-outlined text-outline">alternate_email</span> */}
+                    <MailIcon className="h-5 w-5 text-outline" />
                   </div>
                   <input
                     id="email"

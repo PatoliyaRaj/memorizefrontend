@@ -7,6 +7,7 @@ import { useStudyStore } from '@/stores/use-study-store'
 import { Button } from '@/components/ui/button'
 import { toastError, toastSuccess } from '@/lib/toast'
 import { cn } from '@/lib/utils'
+import {PartyPopperIcon} from 'lucide-react'
 
 export default function StudyPage() {
   const params = useParams()
@@ -80,7 +81,7 @@ export default function StudyPage() {
   if (!cards || cards.length === 0) {
     return (
       <div className="min-h-screen bg-[#060A09] text-text-primary flex items-center justify-center font-body p-6">
-        <div className="text-center space-y-4 max-w-md rounded-2xl border border-border-default bg-[#0B1210] p-8 shadow-lg">
+        <div className="text-center space-y-4 max-w-2xl rounded-2xl border border-border-default bg-[#0B1210] p-8 shadow-lg">
           <span className="material-symbols-outlined text-4xl text-text-tertiary">
             layers_clear
           </span>
@@ -104,11 +105,12 @@ export default function StudyPage() {
     const accuracy = sessionCardsCount > 0 ? Math.round((correctCount / sessionCardsCount) * 100) : 0
     return (
       <div className="min-h-[calc(100vh-64px)] bg-[#060A09] text-text-primary flex items-center justify-center font-body p-4 md:p-6">
-        <div className="w-full max-w-xl rounded-2xl border border-[#6BD8CB]/20 bg-[#0B1210] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.8)] text-center space-y-6">
+        <div className="w-full max-w-2xl rounded-2xl border border-[#6BD8CB]/20 bg-[#0B1210] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.8)] text-center space-y-6">
           <div className="inline-flex items-center justify-center size-16 rounded-full bg-[#134E4A]/30 border border-[#2DD4BF]/30 shadow-glow mb-2">
             <span className="material-symbols-outlined text-3xl text-[#6BD8CB] animate-bounce">
-              celebrate
+              <PartyPopperIcon/>
             </span>
+           
           </div>
 
           <div>

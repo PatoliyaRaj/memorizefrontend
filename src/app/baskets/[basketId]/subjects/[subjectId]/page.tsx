@@ -296,7 +296,7 @@ export default function PlaylistsPage() {
                     </div>
 
                     <div className="flex items-center gap-2 relative z-20">
-                      <button
+                      <Button
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -306,8 +306,8 @@ export default function PlaylistsPage() {
                         title="Edit Playlist"
                       >
                         <span className="material-symbols-outlined text-[16px]">edit</span>
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -317,7 +317,7 @@ export default function PlaylistsPage() {
                         title="Delete Playlist"
                       >
                         <span className="material-symbols-outlined text-[16px]">delete</span>
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -338,16 +338,16 @@ export default function PlaylistsPage() {
       {/* Edit Playlist Modal */}
       {editingPlaylist && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-void/80 p-4 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-outline-variant/30 bg-surface-raised p-6 shadow-2xl">
+          <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-outline-variant/30 bg-surface-raised p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
               <h3 className="font-display text-xl text-text-primary">Edit Playlist</h3>
-              <button
+              <Button
                 type="button"
                 onClick={() => setEditingPlaylist(null)}
                 className="text-text-secondary hover:text-text-primary transition-colors"
               >
                 <span className="material-symbols-outlined">close</span>
-              </button>
+              </Button>
             </div>
 
             <div className="mt-4 grid gap-4">
@@ -407,7 +407,7 @@ export default function PlaylistsPage() {
       {/* Delete Playlist Confirmation Modal */}
       {deletingPlaylist && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-void/80 p-4 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl border border-red-500/25 bg-surface-raised p-6 shadow-2xl">
+          <div className="w-full max-w-2xl rounded-2xl border border-red-500/25 bg-surface-raised p-6 shadow-2xl">
             <h3 className="font-display text-xl text-red-400 flex items-center gap-2">
               <span className="material-symbols-outlined text-red-500">warning</span>
               Delete Playlist

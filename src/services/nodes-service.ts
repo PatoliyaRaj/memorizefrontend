@@ -4,9 +4,13 @@ export type VisualNode = {
   id: string
   title: string
   node_type?: 'concept' | 'definition' | 'formula' | 'process' | 'example' | 'exception'
-  pos_x: number
-  pos_y: number
-  mastery_level: 'unseen' | 'weak' | 'learning' | 'strong' | 'mastered'
+  nodeType?: 'concept' | 'definition' | 'formula' | 'process' | 'example' | 'exception'
+  pos_x?: number
+  pos_y?: number
+  posX?: number
+  posY?: number
+  mastery_level?: 'unseen' | 'weak' | 'learning' | 'strong' | 'mastered'
+  masteryLevel?: 'unseen' | 'weak' | 'learning' | 'strong' | 'mastered'
 }
 
 export type CreateNodePayload = {

@@ -19,15 +19,15 @@ import {
 import '@xyflow/react/dist/style.css'
 import ConceptNodes from '@/components/neural-map/ConceptNode'
 import { getNodesByPlaylist, patchNodePosition, VisualNode } from '@/services/nodes-service'
-import { getEdgesByPlaylist, createEdge } from '@/services/edges-service'
+import { getEdgesByPlaylist, createEdge, deleteEdge } from '@/services/edges-service'
 import NodeSidebar from '../../../components/neural-map/NodeSidebar'
 import { Button } from '@/components/ui/button'
 import { toastError, toastSuccess } from '@/lib/toast'
 
 const nodeTypes = { concept: ConceptNodes }
 
-function mapMasteryToColor(level: VisualNode['mastery_level']){
-  switch(level){
+function mapMasteryToColor(level: VisualNode['mastery_level']) {
+  switch (level) {
     case 'unseen': return '#94a3b8' // gray
     case 'weak': return '#fb7185' // coral
     case 'learning': return '#f59e0b' // amber
@@ -63,7 +63,7 @@ const initialDraft: NodeDraft = {
   posY: 0,
 }
 
-function MapCanvas(){
+function MapCanvas() {
   const params = useParams()
   const playlistId = params?.playlistId as string
   const { screenToFlowPosition, getViewport } = useReactFlow()
@@ -75,38 +75,48 @@ function MapCanvas(){
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState([] as Edge[])
   const saveTimers = useRef<Record<string, any>>({})
 
-  useEffect(()=>{
-    if(!playlistId) return
+  useEffect(() => {
+    if (!playlistId) return
     let mounted = true
     Promise.all([getNodesByPlaylist(playlistId), getEdgesByPlaylist(playlistId)])
       .then(([nodes, edges]) => {
-        if(!mounted) return
-        const mapped = nodes.map((n: VisualNode) : Node => ({
-          id: n.id,
-          type: 'concept',
-          position: { x: n.pos_x || 0, y: n.pos_y || 0 },
-          data: { label: n.title, masteryLevel: n.mastery_level, isMastered: n.mastery_level==='mastered' }
-        }))
-        const mappedEdges = edges.map((e:any): Edge => ({ 
-          id: e.id, 
-          source: e.source, 
-          target: e.target, 
+        if (!mounted) return
+        const mapped = nodes.map((n: VisualNode): Node => {
+          const mastery = n.masteryLevel ?? n.mastery_level ?? 'unseen'
+          return {
+            id: n.id,
+            type: 'concept',
+            position: {
+              x: n.posX !== undefined ? n.posX : (n.pos_x !== undefined ? n.pos_x : 0),
+              y: n.posY !== undefined ? n.posY : (n.pos_y !== undefined ? n.pos_y : 0)
+            },
+            data: {
+              label: n.title,
+              masteryLevel: mastery,
+              isMastered: mastery === 'mastered'
+            }
+          }
+        })
+        const mappedEdges = edges.map((e: any): Edge => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
           sourceHandle: e.sourceHandle || null,
           targetHandle: e.targetHandle || null,
-          animated: true, 
-          style: { stroke: 'var(--border-brand)', strokeWidth: 2 } 
+          animated: true,
+          style: { stroke: 'var(--border-brand)', strokeWidth: 2 }
         }))
         setRfNodes(mapped)
         setRfEdges(mappedEdges)
       })
-      .catch(()=> toastError('Failed to load map data.'))
-    return ()=>{
-      mounted=false
+      .catch(() => toastError('Failed to load map data.'))
+    return () => {
+      mounted = false
       Object.values(saveTimers.current).forEach((timer) => {
         if (timer) window.clearTimeout(timer)
       })
     }
-  },[playlistId, setRfEdges, setRfNodes])
+  }, [playlistId, setRfEdges, setRfNodes])
 
   const openCreateSidebar = useCallback((position: { x: number; y: number }) => {
     setNodeDraft((current) => ({
@@ -153,34 +163,66 @@ function MapCanvas(){
     }, 1000)
   }, [])
 
-  const onNodeClick = useCallback((evt:any, node:Node)=>{
+  const onNodeClick = useCallback((evt: any, node: Node) => {
     setContextMenu(null)
     setSidebarState({ mode: 'view', nodeId: node.id })
   }, [])
 
-  const onConnect = useCallback(async (params: Connection | Edge)=>{
+  const onConnect = useCallback(async (params: Connection | Edge) => {
     // optimistic UI add
     const newEdge = addEdge({
       ...params,
       animated: true,
       style: { stroke: 'var(--border-brand)', strokeWidth: 2 }
     } as any, rfEdges)
+    const tempEdgeId = newEdge[newEdge.length - 1]?.id
     setRfEdges(newEdge)
-    try{
-      const payload = { 
-        source: (params as any).source, 
-        target: (params as any).target, 
+    try {
+      const payload = {
+        source: (params as any).source,
+        target: (params as any).target,
         sourceHandle: (params as any).sourceHandle,
         targetHandle: (params as any).targetHandle,
-        edge_type: 'prerequisite_of' 
+        edge_type: 'prerequisite_of'
       }
       const created = await createEdge(payload)
-      // replace temp edge id if backend returns id
-      setRfEdges((eds)=>eds.map((ed)=> ed.id === (params as any).id ? ({...ed, id: created.id, sourceHandle: created.sourceHandle, targetHandle: created.targetHandle}) : ed))
-    }catch(e){
+      // replace the optimistic React Flow edge id with the database UUID
+      if (tempEdgeId) {
+        setRfEdges((eds) => eds.map((ed) => ed.id === tempEdgeId ? ({
+          ...ed,
+          id: created.id,
+          sourceHandle: created.sourceHandle,
+          targetHandle: created.targetHandle,
+        }) : ed))
+      }
+    } catch (e) {
       console.error(e)
     }
   }, [rfEdges])
+
+  const onEdgesDelete = useCallback(async (edgesToDelete: Edge[]) => {
+    for (const edge of edgesToDelete) {
+      try {
+        await deleteEdge(edge.id)
+        toastSuccess('Connection removed.')
+      } catch (error) {
+        toastError('Failed to remove connection from database.')
+      }
+    }
+  }, [])
+
+  const onEdgeClick = useCallback(async (event: React.MouseEvent, edge: Edge) => {
+    event.stopPropagation()
+    if (window.confirm("Remove this connection wire?")) {
+      try {
+        await deleteEdge(edge.id)
+        setRfEdges((eds) => eds.filter((e) => e.id !== edge.id))
+        toastSuccess("Connection removed.")
+      } catch (e) {
+        toastError("Failed to remove connection.")
+      }
+    }
+  }, [setRfEdges])
 
   const sidebarNodeId = sidebarState?.mode === 'view' ? sidebarState.nodeId : null
   const createPosition = sidebarState?.mode === 'create' ? sidebarState.position : null
@@ -197,6 +239,8 @@ function MapCanvas(){
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         onPaneContextMenu={onPaneContextMenu}
+        onEdgesDelete={onEdgesDelete}
+        onEdgeClick={onEdgeClick}
         nodeTypes={nodeTypes}
         fitView
         panOnDrag
@@ -213,7 +257,7 @@ function MapCanvas(){
         </Panel>
         <Background gap={16} size={1} color="var(--border-default)" />
         <Controls />
-        <MiniMap 
+        <MiniMap
           nodeColor={(n: any) => {
             const mastery = n.data?.masteryLevel || 'unseen';
             return `var(--mastery-${mastery}-text)`;
@@ -228,20 +272,20 @@ function MapCanvas(){
           className="fixed z-60 min-w-48 rounded-xl border border-outline-variant/40 bg-surface-base/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.45)] backdrop-blur-md"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
-          <button
+          <Button
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-text-primary transition-colors hover:bg-surface-container"
             onClick={() => openCreateSidebar(contextMenu.flowPosition)}
           >
             <span className="material-symbols-outlined text-primary">add</span>
             Add node here
-          </button>
-          <button
+          </Button>
+          <Button
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-text-primary transition-colors hover:bg-surface-container"
             onClick={openCreateAtViewportCenter}
           >
             <span className="material-symbols-outlined text-primary">center_focus_strong</span>
             Add node at center
-          </button>
+          </Button>
         </div>
       )}
 
@@ -252,11 +296,19 @@ function MapCanvas(){
         mode={sidebarState?.mode ?? null}
         onClose={closeSidebar}
         onCreated={(node: VisualNode) => {
+          const mastery = node.masteryLevel ?? node.mastery_level ?? 'unseen'
           setRfNodes((current) => [...current, {
             id: node.id,
             type: 'concept',
-            position: { x: node.pos_x || 0, y: node.pos_y || 0 },
-            data: { label: node.title, masteryLevel: node.mastery_level, isMastered: node.mastery_level === 'mastered' },
+            position: {
+              x: node.posX !== undefined ? node.posX : (node.pos_x !== undefined ? node.pos_x : 0),
+              y: node.posY !== undefined ? node.posY : (node.pos_y !== undefined ? node.pos_y : 0)
+            },
+            data: {
+              label: node.title,
+              masteryLevel: mastery,
+              isMastered: mastery === 'mastered'
+            },
           }])
           setSidebarState({ mode: 'view', nodeId: node.id })
         }}
@@ -265,14 +317,14 @@ function MapCanvas(){
             nodes.map((n) =>
               n.id === id
                 ? {
-                    ...n,
-                    data: {
-                      ...n.data,
-                      label: updates.title ?? n.data.label,
-                      masteryLevel: updates.mastery_level ?? n.data.masteryLevel,
-                      isMastered: updates.mastery_level === 'mastered',
-                    },
-                  }
+                  ...n,
+                  data: {
+                    ...n.data,
+                    label: updates.title ?? n.data.label,
+                    masteryLevel: updates.mastery_level ?? n.data.masteryLevel,
+                    isMastered: updates.mastery_level === 'mastered',
+                  },
+                }
                 : n
             )
           )
@@ -287,7 +339,7 @@ function MapCanvas(){
   )
 }
 
-export default function MapPage(){
+export default function MapPage() {
   return (
     <ReactFlowProvider>
       <MapCanvas />
