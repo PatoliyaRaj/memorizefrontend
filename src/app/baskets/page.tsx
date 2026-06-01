@@ -181,8 +181,8 @@ export default function BasketsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-void text-text-primary">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-8 lg:px-10">
+    <div className="text-text-primary">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <section className="overflow-hidden rounded-2xl border border-outline-variant/30 bg-surface-base/80 shadow-[0_20px_50px_rgba(6,10,9,0.4)] backdrop-blur-xl">
           <div className="grid gap-6 p-5 md:p-6 lg:grid-cols-[1.4fr_0.9fr] lg:items-start">
             <div className="relative overflow-hidden rounded-2xl border border-outline-variant/30 bg-surface-overlay/60 p-5 md:p-6">

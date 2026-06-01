@@ -42,7 +42,11 @@ export async function getNodesByPlaylist(playlistId: string) {
 }
 
 export async function patchNodePosition(id: string, x: number, y: number) {
-  return updateNode(id, { posX: x, posY: y })
+  const response = await apiClient.patch(`/api/curriculum/nodes/${id}/position`, {
+    posX: x,
+    posY: y,
+  })
+  return unwrapResponse<VisualNode>(response)
 }
 
 export async function getNodeById(id: string) {

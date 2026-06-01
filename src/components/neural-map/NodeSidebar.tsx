@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { getNodeDetails, updateNodeDetails, type NodeDetails, type NodeReference, type NodeImage, type NodeFile } from "@/services/node-details-service";
 import { createNode, updateNode, deleteNode, getNodeById, type VisualNode } from "@/services/nodes-service";
+import NodeCardsTab from "./NodeCardsTab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -63,7 +64,7 @@ export default function NodeSidebar({
   // General sidebar layout / data state
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<"content" | "references" | "assets">("content");
+  const [activeTab, setActiveTab] = useState<"content" | "cards" | "references" | "assets">("content");
 
   // Create Mode Form State
   const [createForm, setCreateForm] = useState<CreateNodeFormState>(() => defaultCreateForm(createPosition));
@@ -614,7 +615,7 @@ export default function NodeSidebar({
 
                 {/* Glassmorphic Tab Selector */}
                 <div className="flex p-1 rounded-xl bg-[#060A09] border border-border-default">
-                  {(["content", "references", "assets"] as const).map((tab) => (
+                  {(["content", "cards", "references", "assets"] as const).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
@@ -741,7 +742,12 @@ export default function NodeSidebar({
                   </div>
                 )}
 
-                {/* TAB 2: REFERENCES */}
+                {/* TAB 2: CARDS */}
+                {activeTab === "cards" && mode === "view" && nodeId && (
+                  <NodeCardsTab nodeId={nodeId} />
+                )}
+
+                {/* TAB 3: REFERENCES */}
                 {activeTab === "references" && (
                   <div className="space-y-4">
                     <div className="space-y-3">
@@ -853,7 +859,7 @@ export default function NodeSidebar({
                   </div>
                 )}
 
-                {/* TAB 3: ASSETS */}
+                {/* TAB 4: ASSETS */}
                 {activeTab === "assets" && (
                   <div className="space-y-6">
                     {/* Visual Images Section */}
