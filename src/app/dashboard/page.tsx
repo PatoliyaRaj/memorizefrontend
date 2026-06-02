@@ -21,6 +21,9 @@ import {
   User
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/use-auth-store'
+import SleepStatus from '@/components/dashboard/SleepStatus'
+import StudyWindowBanner from '@/components/dashboard/StudyWindowBanner'
+import PushEnrollmentBanner from '@/components/dashboard/PushEnrollmentBanner'
 
 type BasketItem = {
   id: string
@@ -88,6 +91,8 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <div className="space-y-6 max-w-5xl mx-auto pb-10">
+        <StudyWindowBanner />
+        <PushEnrollmentBanner />
           
           {/* Welcome Header */}
           <div className="flex items-center justify-between border-b border-border-subtle/50 pb-4">
@@ -179,34 +184,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Widget 2: Sleep & Consolidation Quality */}
-            <div className="rounded-2xl border border-border-default bg-surface-overlay/50 p-5 flex flex-col justify-between shadow-sm hover:border-primary/20 transition-all duration-300">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#9BBFBB] font-bold">Sleep Quality</span>
-                  <Moon className="size-5 text-indigo-400" />
-                </div>
-
-                <div className="flex items-center gap-4 pt-1">
-                  <div className="relative size-14 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-300 font-bold font-mono text-sm">
-                    88%
-                  </div>
-                  <div className="space-y-0.5">
-                    <h4 className="text-xs font-bold text-text-primary">Consolidation Successful</h4>
-                    <p className="text-[10px] text-text-secondary">Slow-wave sleep completed</p>
-                  </div>
-                </div>
-
-                <p className="text-xs text-text-secondary leading-relaxed pt-1">
-                  Your logged sleep profiles align with optimal memory replay windows. Best study slot: <strong>8:00 AM - 11:00 AM</strong>.
-                </p>
-              </div>
-
-              <div className="border-t border-border-subtle/50 pt-4 mt-5 flex items-center justify-between text-[10px] font-mono text-text-tertiary">
-                <span>7.5 Hrs Avg Sleep Night</span>
-                <span className="text-indigo-400 font-bold">Stable</span>
-              </div>
-            </div>
+            {/* Widget 2: Live Sleep Status & Recalculation Gauge */}
+            <SleepStatus />
 
             {/* Widget 3: Synaptic Weak Spot Warning */}
             <div className="rounded-2xl border border-border-default bg-surface-overlay/50 p-5 flex flex-col justify-between shadow-sm md:col-span-2 lg:col-span-1 hover:border-primary/20 transition-all duration-300">

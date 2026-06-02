@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { toastError, toastSuccess } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { PartyPopperIcon, Timer, BedDouble } from 'lucide-react'
+import StudyWindowBanner from '@/components/dashboard/StudyWindowBanner'
+import { NapRecommendation } from '@/components/study/NapRecommendation'
 
 function StudyPageContent() {
   const params = useParams()
@@ -51,6 +53,7 @@ function StudyPageContent() {
   // Timer to track response time
   const cardStartTimeRef = useRef<number>(Date.now())
   const sessionEndedRef = useRef(false)
+  const sessionStartTimeRef = useRef<number>(Date.now())
 
   // Start study session and fetch cards
   useEffect(() => {
@@ -409,9 +412,13 @@ function StudyPageContent() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border-subtle bg-[#121C1A]/40 p-4 text-xs text-text-secondary text-left leading-relaxed">
-            🧠 <strong>Neuroscience Tip:</strong> FSRS algorithm has updated your memory stability variables. Re-access this node when scheduled to solidify long-term retention.
-          </div>
+          {(sessionCardsCount >= 15 || (Date.now() - sessionStartTimeRef.current) >= 20 * 60 * 1000) ? (
+            <NapRecommendation cardsReviewed={sessionCardsCount} durationMin={(Date.now() - sessionStartTimeRef.current) / (1000 * 60)} />
+          ) : (
+            <div className="rounded-xl border border-border-subtle bg-[#121C1A]/40 p-4 text-xs text-text-secondary text-left leading-relaxed">
+              🧠 <strong>Neuroscience Tip:</strong> FSRS algorithm has updated your memory stability variables. Re-access this node when scheduled to solidify long-term retention.
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button
@@ -515,14 +522,7 @@ function StudyPageContent() {
     <div className="min-h-[calc(100vh-64px)] bg-[#060A09] text-text-primary font-body px-4 py-8 md:py-12 flex flex-col justify-center items-center">
       <div className="w-full max-w-3xl space-y-6">
         {/* Circadian Bedtime Alert */}
-        {sleepWarning && (
-          <div className="rounded-xl border border-rose-500/20 bg-rose-950/20 p-4 text-xs text-rose-400 flex items-center gap-3 animate-pulse">
-            <BedDouble className="size-5 text-rose-400 flex-shrink-0" />
-            <span>
-              <strong>Circadian Guard Alert:</strong> Studying within 2 hours of bedtime or during sleep hours. Cognitive performance and synaptic trace consolidation may be severely impaired.
-            </span>
-          </div>
-        )}
+        <StudyWindowBanner />
 
         {/* Top Navigation / Info Header */}
         <div className="flex items-center justify-between border-b border-border-default/40 pb-4">

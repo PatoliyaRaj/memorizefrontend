@@ -10,6 +10,8 @@ export type User = {
   name: string
   email: string
   avatar?: string
+  isOnboarded?: boolean
+  onboardingDone?: boolean
   createdAt: Date
   updatedAt: Date
 }

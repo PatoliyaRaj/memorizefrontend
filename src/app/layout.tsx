@@ -4,6 +4,7 @@ import { Syne, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../components/providers/ThemeProvider";
 import { LenisProvider } from "../components/providers/LenisProvider";
+import { QueryProvider } from "../components/providers/QueryProvider";
 import { Toaster } from "sonner";
 
 // ── Display Font (Headings, titles) ──
@@ -80,16 +81,18 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-surface-void text-text-primary transition-colors duration-200">
         <LenisProvider>
-          <ThemeProvider>
-            {children}
-            <Toaster
-              theme="system"
-              position="top-right"
-              richColors
-              closeButton
-              visibleToasts={5}
-            />
-          </ThemeProvider>
+          <QueryProvider>
+            <ThemeProvider>
+              {children}
+              <Toaster
+                theme="system"
+                position="top-right"
+                richColors
+                closeButton
+                visibleToasts={5}
+              />
+            </ThemeProvider>
+          </QueryProvider>
         </LenisProvider>
       </body>
     </html>

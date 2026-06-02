@@ -22,6 +22,7 @@ import {
   Plus
 } from 'lucide-react'
 import Link from 'next/link'
+import StudyWindowBanner from '@/components/dashboard/StudyWindowBanner'
 
 export default function PulsePage() {
   const router = useRouter()
@@ -159,6 +160,7 @@ export default function PulsePage() {
   return (
     <DashboardShell>
       <div className="space-y-6 max-w-5xl mx-auto pb-10">
+        <StudyWindowBanner />
         
         {/* Upper Header Row */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

@@ -12,7 +12,7 @@ const emptyDraft = {
   explanation: '',
 };
 
-export default function NodeCardsTab({ nodeId }: { nodeId: string }) {
+export default function NodeCardsTab({ nodeId, onCardsChange }: { nodeId: string; onCardsChange?: () => void }) {
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,6 +53,7 @@ export default function NodeCardsTab({ nodeId }: { nodeId: string }) {
       setCards((prev) => [...prev, created]);
       setNewCard(emptyDraft);
       toastSuccess('Card added.');
+      onCardsChange?.();
     } catch (error: any) {
       toastError(error?.response?.data?.error || 'Failed to add card.');
     } finally {
@@ -85,6 +86,7 @@ export default function NodeCardsTab({ nodeId }: { nodeId: string }) {
       setCards((prev) => prev.map((card) => (card.id === cardId ? updated : card)));
       setEditingCardId(null);
       toastSuccess('Card updated.');
+      onCardsChange?.();
     } catch (error: any) {
       toastError(error?.response?.data?.error || 'Failed to update card.');
     } finally {
@@ -100,6 +102,7 @@ export default function NodeCardsTab({ nodeId }: { nodeId: string }) {
       await deleteCard(cardId);
       setCards((prev) => prev.filter((card) => card.id !== cardId));
       toastSuccess('Card deleted.');
+      onCardsChange?.();
     } catch (error: any) {
       toastError(error?.response?.data?.error || 'Failed to delete card.');
     } finally {
@@ -154,8 +157,17 @@ export default function NodeCardsTab({ nodeId }: { nodeId: string }) {
         </div>
 
         {cards.length === 0 ? (
-          <div className="rounded-lg border border-border-subtle bg-[#060A09] p-4 text-sm text-text-secondary">
-            No cards yet. Add one above, or let the study page auto-seed from your node details.
+          <div className="rounded-xl border border-border-subtle bg-[#060A09] p-6 text-center space-y-3">
+            <p className="text-xs text-text-secondary leading-relaxed">
+              No active recall cards are attached to this node yet. Add one above, or let the cognitive engine auto-seed them from your theory details.
+            </p>
+            <Button
+              onClick={loadCards}
+              disabled={loading || saving}
+              className="bg-[#0D9488] text-white hover:bg-[#14B8A6] font-bold text-xs"
+            >
+              ⚡ Auto-Seed Cards from Details
+            </Button>
           </div>
         ) : (
           cards.map((card) => (

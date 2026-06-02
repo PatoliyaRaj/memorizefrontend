@@ -7,6 +7,7 @@ import {
   Bell,
   Brain,
   ChevronLeft,
+  CheckCheck,
   LayoutGrid,
   LogOut,
   Map,
@@ -17,6 +18,10 @@ import {
   Settings,
   Sparkles,
   X,
+  BarChart3,
+  Moon,
+  Monitor,
+  Smartphone,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -24,6 +29,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Drawer, DrawerContent } from "@/components/ui/drawer"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/use-auth-store"
+import { type NotificationItem } from "@/services/notification-service"
+import { useNotifications, useMarkAsReadMutation, useMarkAllAsReadMutation } from "@/hooks/use-notifications"
+import { useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -44,6 +53,8 @@ const navItems: NavItem[] = [
   { label: "Today's Pulse",icon: Sparkles,   path: "/pulse" },
   { label: "My Baskets",   icon: Brain,      path: "/baskets" },
   { label: "Neural Maps",  icon: Map,        path: "/neuralmap" },
+  { label: "Sleep Tracker",icon: Moon,       path: "/sleep" },
+  { label: "Analytics Hub",icon: BarChart3,  path: "/stats" },
 ]
 
 // ─── Sidebar Logo ────────────────────────────────────────────────────────────
@@ -168,12 +179,20 @@ function SidebarUserFooter({ onNavigate }: { onNavigate?: () => void }) {
 
 // ─── Full Sidebar (used on desktop) ─────────────────────────────────────────
 
-function DesktopSidebar({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+function DesktopSidebar({
+  collapsed,
+  isDesktopView,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  isDesktopView: boolean;
+  onNavigate?: () => void;
+}) {
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col h-full border-r border-border-subtle bg-surface-base/90 backdrop-blur-md shrink-0 transition-all duration-300 ease-in-out overflow-hidden",
-        collapsed ? "w-0 border-r-0" : "w-64"
+        "flex flex-col h-full border-r border-border-subtle bg-surface-base/90 backdrop-blur-md shrink-0 transition-all duration-300 ease-in-out overflow-hidden",
+        isDesktopView ? "w-64" : (collapsed ? "w-0 border-r-0" : "w-64 hidden md:flex")
       )}
     >
       {/* Inner wrapper — fixed 256px so transition clips cleanly */}
@@ -192,11 +211,114 @@ function DashboardTopBar({
   onToggleSidebar,
   sidebarCollapsed,
   onOpenMobileSidebar,
+  isDesktopView,
+  onToggleDesktopView,
 }: {
   onToggleSidebar: () => void
   sidebarCollapsed: boolean
   onOpenMobileSidebar: () => void
+  isDesktopView: boolean
+  onToggleDesktopView: () => void
 }) {
+  const [dropdownOpen, setDropdownOpen] = React.useState(false)
+  const dropdownRef = React.useRef<HTMLDivElement>(null)
+  const user = useAuthStore((s) => s.user)
+  const router = useRouter()
+
+  const queryClient = useQueryClient()
+  const { data: notificationsList = [], isLoading } = useNotifications()
+  const markAsReadMutation = useMarkAsReadMutation()
+  const markAllAsReadMutation = useMarkAllAsReadMutation()
+
+  React.useEffect(() => {
+    if (!user) return
+
+    // Establishes a persistent SSE stream to capture real-time database pushes
+    const token = useAuthStore.getState().token
+    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    const url = token 
+      ? `${baseURL}/api/notifications/stream?token=${encodeURIComponent(token)}` 
+      : `${baseURL}/api/notifications/stream`
+
+    const eventSource = new EventSource(url)
+
+    eventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data)
+        if (payload.connected) {
+          console.log('[SSE] Stream connected successfully')
+          return
+        }
+
+        // Live Cache Invalidation and Injection
+        queryClient.setQueryData<NotificationItem[]>(['notifications'], (old) => {
+          if (!old) return [payload]
+          if (old.some((n) => n.id === payload.id)) return old
+          return [payload, ...old]
+        })
+
+        // Fire toast visual alert
+        toast.info(`🔔 ${payload.title}`, {
+          description: payload.body,
+          action: {
+            label: "Open",
+            onClick: () => {
+              if (payload.type === 'study_reminder') router.push('/pulse')
+              else if (payload.type === 'sleep_alert') router.push('/sleep')
+            }
+          }
+        })
+      } catch (e) {
+        console.error('[SSE] Failed to parse stream event:', e)
+      }
+    }
+
+    eventSource.onerror = (e) => {
+      console.warn('[SSE] EventSource disconnected. Standard React Query poll fallback active.', e)
+    }
+
+    return () => {
+      eventSource.close()
+    }
+  }, [user, queryClient, router])
+
+  // Handle click outside to close the dropdown
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const unreadCount = notificationsList.filter(n => !n.read).length
+
+  async function handleMarkAllAsRead() {
+    try {
+      await markAllAsReadMutation.mutateAsync()
+    } catch (e) {
+      console.error('[Notifications] Mark all read failed:', e)
+    }
+  }
+
+  async function handleNotificationClick(item: NotificationItem) {
+    try {
+      if (!item.read) {
+        await markAsReadMutation.mutateAsync(item.id)
+      }
+      setDropdownOpen(false)
+      if (item.type === 'study_reminder') {
+        router.push('/pulse')
+      } else if (item.type === 'sleep_alert') {
+        router.push('/sleep')
+      }
+    } catch (e) {
+      console.error('[Notifications] Click notification failed:', e)
+    }
+  }
+
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border-subtle bg-surface-base/80 px-4 backdrop-blur-sm lg:px-5 z-10">
       <div className="flex items-center gap-2 min-w-0">
@@ -204,7 +326,10 @@ function DashboardTopBar({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="md:hidden text-text-secondary hover:text-text-primary hover:bg-surface-hover"
+          className={cn(
+            "text-text-secondary hover:text-text-primary hover:bg-surface-hover",
+            isDesktopView ? "hidden" : "md:hidden"
+          )}
           onClick={onOpenMobileSidebar}
           aria-label="Open navigation"
         >
@@ -215,7 +340,10 @@ function DashboardTopBar({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="hidden md:flex text-text-secondary hover:text-text-primary hover:bg-surface-hover"
+          className={cn(
+            "text-text-secondary hover:text-text-primary hover:bg-surface-hover",
+            isDesktopView ? "flex" : "hidden md:flex"
+          )}
           onClick={onToggleSidebar}
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -223,7 +351,10 @@ function DashboardTopBar({
         </Button>
 
         {/* Search bar — hidden on small screens */}
-        <div className="hidden sm:flex items-center gap-2 rounded-lg border border-border-default bg-surface-overlay/70 px-3 py-2 text-sm text-text-secondary max-w-[28rem] cursor-pointer hover:border-border-strong hover:bg-surface-hover transition-colors duration-200">
+        <div className={cn(
+          "items-center gap-2 rounded-lg border border-border-default bg-surface-overlay/70 px-3 py-2 text-sm text-text-secondary max-w-[28rem] cursor-pointer hover:border-border-strong hover:bg-surface-hover transition-colors duration-200",
+          isDesktopView ? "flex" : "hidden sm:flex"
+        )}>
           <Search className="size-3.5 shrink-0" />
           <span className="truncate text-xs">Search nodes, baskets...</span>
           <kbd className="ml-2 shrink-0 hidden md:inline-flex h-5 items-center gap-1 rounded border border-border-default bg-surface-raised px-1.5 font-mono text-[9px] text-text-tertiary">
@@ -236,13 +367,95 @@ function DashboardTopBar({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="text-text-secondary hover:text-text-primary hover:bg-surface-hover relative"
-          aria-label="Notifications"
+          className="text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-all duration-200"
+          onClick={onToggleDesktopView}
+          aria-label={isDesktopView ? "Switch to Mobile View" : "Switch to Desktop View"}
+          title={isDesktopView ? "Switch to Mobile View" : "Switch to Desktop View"}
         >
-          <Bell className="size-4" />
-          {/* Notification dot */}
-          <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary shadow-[0_0_6px_rgba(107,216,203,0.6)]" />
+          {isDesktopView ? <Smartphone className="size-4" /> : <Monitor className="size-4" />}
         </Button>
+
+        <div className="relative flex items-center" ref={dropdownRef}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className={cn(
+              "text-text-secondary hover:text-text-primary hover:bg-surface-hover relative transition-all duration-200",
+              dropdownOpen && "text-primary bg-surface-hover"
+            )}
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            aria-label="Notifications"
+          >
+            <Bell className="size-4" />
+            {unreadCount > 0 && (
+              <span className="absolute right-1.5 top-1.5 flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary shadow-[0_0_6px_rgba(107,216,203,0.8)]"></span>
+              </span>
+            )}
+          </Button>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 top-10 w-80 max-h-[28rem] overflow-hidden rounded-2xl border border-border-subtle bg-surface-base/90 backdrop-blur-md shadow-2xl flex flex-col z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3 bg-surface-overlay/30 shrink-0">
+                <span className="text-xs font-bold text-text-primary tracking-wide">Notifications</span>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllAsRead}
+                    className="flex items-center gap-1 text-[10px] font-bold text-primary hover:text-primary-fixed transition-colors"
+                  >
+                    <CheckCheck className="size-3" />
+                    Mark all read
+                  </button>
+                )}
+              </div>
+
+              <div className="flex-1 overflow-y-auto max-h-80 divide-y divide-border-subtle/50" data-lenis-prevent>
+                {isLoading && notificationsList.length === 0 ? (
+                  <div className="flex items-center justify-center p-8 text-xs text-text-tertiary">
+                    Loading notifications...
+                  </div>
+                ) : notificationsList.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-8 text-center">
+                    <div className="flex size-8 items-center justify-center rounded-full bg-surface-hover text-text-tertiary mb-2">
+                      <Bell className="size-4" />
+                    </div>
+                    <p className="text-xs font-bold text-text-secondary">All caught up!</p>
+                    <p className="text-[10px] text-text-tertiary mt-0.5">No new study alerts or sleep notifications.</p>
+                  </div>
+                ) : (
+                  notificationsList.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => handleNotificationClick(item)}
+                      className={cn(
+                        "p-3 text-left cursor-pointer transition-colors duration-150 hover:bg-surface-hover",
+                        !item.read ? "bg-primary/5" : "bg-transparent"
+                      )}
+                    >
+                      <div className="flex items-start gap-2">
+                        {!item.read && (
+                          <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_6px_rgba(107,216,203,0.8)]" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-text-primary leading-snug truncate">
+                            {item.title}
+                          </p>
+                          <p className="text-[11px] text-text-secondary mt-0.5 leading-relaxed line-clamp-2">
+                            {item.body}
+                          </p>
+                          <p className="text-[9px] font-mono text-text-tertiary mt-1.5">
+                            {new Date(item.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="h-6 w-px bg-border-subtle mx-0.5" />
 
@@ -251,8 +464,8 @@ function DashboardTopBar({
           className="inline-flex h-8 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-bold text-on-primary shadow-[0_0_12px_rgba(107,216,203,0.2)] transition-all duration-200 hover:bg-primary/90 hover:shadow-[0_0_18px_rgba(107,216,203,0.35)] active:scale-[0.97]"
         >
           <Sparkles className="size-3.5" />
-          <span className="hidden sm:inline">Start Session</span>
-          <span className="sm:hidden">Go</span>
+          <span className={cn(isDesktopView ? "inline" : "hidden sm:inline")}>Start Session</span>
+          {!isDesktopView && <span className="sm:hidden">Go</span>}
         </Link>
       </div>
     </header>
@@ -322,42 +535,76 @@ function MobileSidebar({
 export function DashboardShell({ children }: DashboardShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false)
+  const [isDesktopView, setIsDesktopView] = React.useState(false)
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem("force-desktop-view")
+    if (saved === "true") {
+      setIsDesktopView(true)
+    }
+  }, [])
+
+  const handleToggleDesktopView = () => {
+    setIsDesktopView((prev) => {
+      const next = !prev
+      localStorage.setItem("force-desktop-view", String(next))
+      toast.success(next ? "Forced Desktop View active" : "Responsive View active")
+      return next
+    })
+  }
 
   return (
-    // Outer: full viewport, no overflow. This prevents Lenis from touching the dashboard body scroll.
-    <div className="flex h-screen overflow-hidden bg-surface-void text-text-primary">
+    // Outer: full viewport. If isDesktopView is true, we allow horizontal overflow of the 1280px canvas!
+    <div className={cn(
+      "flex h-screen bg-surface-void text-text-primary",
+      isDesktopView ? "overflow-x-auto overflow-y-hidden" : "overflow-hidden"
+    )}>
 
-      {/* ── Desktop Sidebar ── */}
-      <DesktopSidebar
-        collapsed={sidebarCollapsed}
-        onNavigate={undefined}
-      />
+      {/* Viewport content wrapper for forced desktop layout */}
+      <div className={cn(
+        "flex flex-1 h-full min-w-0",
+        isDesktopView ? "w-[1280px] min-w-[1280px] shrink-0" : "w-full"
+      )}>
 
-      {/* ── Right column: topbar + scrollable main ── */}
-      <div className="flex flex-1 flex-col min-w-0 h-full overflow-hidden">
-
-        {/* Topbar — fixed height, never scrolls */}
-        <DashboardTopBar
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
-          onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+        {/* ── Desktop Sidebar ── */}
+        <DesktopSidebar
+          collapsed={sidebarCollapsed}
+          isDesktopView={isDesktopView}
+          onNavigate={undefined}
         />
 
-        {/* Main content — THE ONLY SCROLL ZONE */}
-        {/* min-h-0 is critical — without it, flex children won't scroll in a column flex container */}
-        {/* data-lenis-prevent tells Lenis to NOT intercept scroll events here → native overflow-y-auto works */}
-        <main className="flex-1 min-h-0 overflow-y-auto" data-lenis-prevent>
-          <div className="h-full p-4 md:p-5 lg:p-6">
-            {children}
-          </div>
-        </main>
+        {/* ── Right column: topbar + scrollable main ── */}
+        <div className="flex flex-1 flex-col min-w-0 h-full overflow-hidden">
+
+          {/* Topbar — fixed height, never scrolls */}
+          <DashboardTopBar
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
+            onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+            isDesktopView={isDesktopView}
+            onToggleDesktopView={handleToggleDesktopView}
+          />
+
+          {/* Main content — THE ONLY SCROLL ZONE */}
+          <main className="flex-1 min-h-0 overflow-y-auto animate-fade-in" data-lenis-prevent>
+            <div className={cn(
+              "h-full",
+              isDesktopView ? "p-6" : "p-4 md:p-5 lg:p-6"
+            )}>
+              {children}
+            </div>
+          </main>
+        </div>
+
       </div>
 
       {/* ── Mobile Drawer Sidebar ── */}
-      <MobileSidebar
-        open={mobileSidebarOpen}
-        onClose={() => setMobileSidebarOpen(false)}
-      />
+      {!isDesktopView && (
+        <MobileSidebar
+          open={mobileSidebarOpen}
+          onClose={() => setMobileSidebarOpen(false)}
+        />
+      )}
     </div>
   )
 }

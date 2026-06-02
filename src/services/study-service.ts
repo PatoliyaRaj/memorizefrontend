@@ -76,3 +76,26 @@ export async function deleteCard(cardId: string) {
   const { data } = await apiClient.delete(`/api/cards/${cardId}`)
   return data
 }
+
+export type DueCard = {
+  card: Card
+  cardState: {
+    id: string
+    stability: number
+    difficulty: number
+    state: 'New' | 'Learning' | 'Review' | 'Relearning'
+    nextReview: string | null
+    masteryLevel: 'new' | 'learning' | 'reviewing' | 'mastered'
+  } | null
+  node: {
+    id: string
+    title: string
+  }
+}
+
+export async function getDueCards(basketId?: string) {
+  const { data } = await apiClient.get(`/api/study/due-cards`, {
+    params: basketId ? { basketId } : {},
+  })
+  return data as DueCard[]
+}

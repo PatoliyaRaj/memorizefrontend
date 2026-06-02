@@ -744,7 +744,16 @@ export default function NodeSidebar({
 
                 {/* TAB 2: CARDS */}
                 {activeTab === "cards" && mode === "view" && nodeId && (
-                  <NodeCardsTab nodeId={nodeId} />
+                  <NodeCardsTab
+                    nodeId={nodeId}
+                    onCardsChange={() => {
+                      getNodeDetails(nodeId)
+                        .then((res) => {
+                          setCardsDueCount(res.cards_due_count || 0);
+                        })
+                        .catch((err) => console.error("Failed to sync due cards count", err));
+                    }}
+                  />
                 )}
 
                 {/* TAB 3: REFERENCES */}

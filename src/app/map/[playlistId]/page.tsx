@@ -18,6 +18,9 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import ConceptNodes from '@/components/neural-map/ConceptNode'
+import RelationshipEdge from '@/components/neural-map/RelationshipEdge'
+import MapToolbar from '@/components/neural-map/MapToolbar'
+import MasteryLegend from '@/components/neural-map/MasteryLegend'
 import { getNodesByPlaylist, patchNodePosition, VisualNode } from '@/services/nodes-service'
 import { getEdgesByPlaylist, createEdge, deleteEdge } from '@/services/edges-service'
 import NodeSidebar from '../../../components/neural-map/NodeSidebar'
@@ -25,6 +28,7 @@ import { Button } from '@/components/ui/button'
 import { toastError, toastSuccess } from '@/lib/toast'
 
 const nodeTypes = { concept: ConceptNodes }
+const edgeTypes = { relational: RelationshipEdge }
 
 function mapMasteryToColor(level: VisualNode['mastery_level']) {
   switch (level) {
@@ -66,10 +70,11 @@ const initialDraft: NodeDraft = {
 function MapCanvas() {
   const params = useParams()
   const playlistId = params?.playlistId as string
-  const { screenToFlowPosition, getViewport } = useReactFlow()
+  const { screenToFlowPosition, getViewport, fitView } = useReactFlow()
   const [sidebarState, setSidebarState] = useState<SidebarState | null>(null)
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null)
   const [nodeDraft, setNodeDraft] = useState<NodeDraft>(initialDraft)
+  const [showLabels, setShowLabels] = useState(true)
 
   const [rfNodes, setRfNodes, onNodesChange] = useNodesState([] as Node[])
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState([] as Edge[])
@@ -104,7 +109,9 @@ function MapCanvas() {
           sourceHandle: e.sourceHandle || null,
           targetHandle: e.targetHandle || null,
           animated: true,
-          style: { stroke: 'var(--border-brand)', strokeWidth: 2 }
+          type: showLabels ? 'relational' : 'default',
+          data: { edgeType: e.edgeType || e.edge_type || 'prerequisite_of' },
+          style: { stroke: 'var(--border-brand)', strokeWidth: 2.5 }
         }))
         setRfNodes(mapped)
         setRfEdges(mappedEdges)
@@ -116,7 +123,7 @@ function MapCanvas() {
         if (timer) window.clearTimeout(timer)
       })
     }
-  }, [playlistId, setRfEdges, setRfNodes])
+  }, [playlistId, setRfEdges, setRfNodes, showLabels])
 
   const openCreateSidebar = useCallback((position: { x: number; y: number }) => {
     setNodeDraft((current) => ({
@@ -224,6 +231,144 @@ function MapCanvas() {
     }
   }, [setRfEdges])
 
+  const [manualPositions, setManualPositions] = useState<Record<string, { x: number; y: number }> | null>(null);
+
+  const cacheManualPositions = useCallback((nodes: Node[]) => {
+    setManualPositions((current) => {
+      if (current) return current;
+      const cache: Record<string, { x: number; y: number }> = {};
+      nodes.forEach((n) => {
+        cache[n.id] = { ...n.position };
+      });
+      return cache;
+    });
+  }, []);
+
+  const handleAutoLayout = useCallback(() => {
+    const cols = 4;
+    const xSpacing = 280;
+    const ySpacing = 180;
+    
+    setRfNodes((nodes) => {
+      if (nodes.length === 0) return nodes;
+      cacheManualPositions(nodes);
+      
+      const sortedNodes = [...nodes].sort((a, b) => {
+        const idxA = Number(a.data?.orderIndex ?? 0);
+        const idxB = Number(b.data?.orderIndex ?? 0);
+        return idxA - idxB;
+      });
+      
+      const updated = sortedNodes.map((n, i) => {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+        const newX = col * xSpacing;
+        const newY = row * ySpacing;
+        
+        patchNodePosition(n.id, newX, newY).catch(() => {});
+        
+        return {
+          ...n,
+          position: { x: newX, y: newY },
+        };
+      });
+      
+      toastSuccess('Nodes aligned neatly in grid layout.');
+      return updated;
+    });
+  }, [setRfNodes, cacheManualPositions]);
+
+  const handleTreeLayout = useCallback(() => {
+    const xSpacing = 320;
+    const ySpacing = 200;
+
+    setRfNodes((nodes) => {
+      if (nodes.length === 0) return nodes;
+      cacheManualPositions(nodes);
+
+      const allNodeIds = nodes.map(n => n.id);
+
+      // Compute depths recursively based on prerequisite connections (source -> target)
+      const depthMap: Record<string, number> = {};
+      
+      const computeDepth = (id: string, visited: Set<string>): number => {
+        if (depthMap[id] !== undefined) return depthMap[id];
+        if (visited.has(id)) return 0; // Avoid cyclic loops
+
+        visited.add(id);
+        
+        const prereqs = rfEdges.filter(e => e.target === id && allNodeIds.includes(e.source));
+        if (prereqs.length === 0) {
+          depthMap[id] = 0;
+        } else {
+          let maxPrereqDepth = 0;
+          prereqs.forEach(e => {
+            maxPrereqDepth = Math.max(maxPrereqDepth, computeDepth(e.source, new Set(visited)));
+          });
+          depthMap[id] = 1 + maxPrereqDepth;
+        }
+        
+        return depthMap[id];
+      };
+
+      allNodeIds.forEach(id => {
+        computeDepth(id, new Set());
+      });
+
+      // Group nodes by depth column
+      const depthGroups: Record<number, string[]> = {};
+      allNodeIds.forEach(id => {
+        const d = depthMap[id] || 0;
+        if (!depthGroups[d]) depthGroups[d] = [];
+        depthGroups[d].push(id);
+      });
+
+      // Align nodes in columns from left to right
+      const updated = nodes.map(n => {
+        const d = depthMap[n.id] || 0;
+        const group = depthGroups[d];
+        const idx = group.indexOf(n.id);
+        const N = group.length;
+
+        const newX = d * xSpacing;
+        const newY = (idx - (N - 1) / 2) * ySpacing;
+
+        patchNodePosition(n.id, newX, Math.round(newY)).catch(() => {});
+
+        return {
+          ...n,
+          position: { x: newX, y: Math.round(newY) },
+        };
+      });
+
+      toastSuccess('Prerequisite dependency tree auto-layout applied.');
+      return updated;
+    });
+  }, [rfEdges, setRfNodes, cacheManualPositions]);
+
+  const handleResetToManual = useCallback(() => {
+    if (!manualPositions) return;
+
+    setRfNodes((nodes) => {
+      const updated = nodes.map(n => {
+        const pos = manualPositions[n.id];
+        if (pos) {
+          patchNodePosition(n.id, pos.x, pos.y).catch(() => {});
+          return {
+            ...n,
+            position: { x: pos.x, y: pos.y }
+          };
+        }
+        return n;
+      });
+
+      toastSuccess('Manual node layout restored.');
+      return updated;
+    });
+
+    setManualPositions(null);
+  }, [manualPositions, setRfNodes]);
+
   const sidebarNodeId = sidebarState?.mode === 'view' ? sidebarState.nodeId : null
   const createPosition = sidebarState?.mode === 'create' ? sidebarState.position : null
 
@@ -242,18 +387,26 @@ function MapCanvas() {
         onEdgesDelete={onEdgesDelete}
         onEdgeClick={onEdgeClick}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         panOnDrag
       >
-        <Panel position="top-left" className="pointer-events-auto">
-          <div className="flex items-center gap-2 rounded-xl border border-outline-variant/30 bg-surface-overlay/90 p-2 shadow-lg backdrop-blur-md">
-            <Button type="button" onClick={openCreateAtViewportCenter} className="bg-primary text-on-primary hover:bg-primary-fixed-dim">
-              + Add Node
-            </Button>
-            <Button type="button" variant="outline" onClick={() => setContextMenu(null)} className="border-outline-variant/40 bg-surface-base/70 text-text-primary hover:bg-surface-container">
-              Close Menu
-            </Button>
-          </div>
+        <Panel position="top-center" className="pointer-events-auto">
+          <MapToolbar
+            totalNodes={rfNodes.length}
+            masteredNodes={rfNodes.filter(n => n.data?.masteryLevel === 'mastered').length}
+            onAutoLayout={handleAutoLayout}
+            onTreeLayout={handleTreeLayout}
+            onResetToManual={handleResetToManual}
+            hasManualHistory={manualPositions !== null}
+            onFitView={() => fitView({ duration: 800 })}
+            showLabels={showLabels}
+            onToggleLabels={() => setShowLabels(prev => !prev)}
+            onAddNode={openCreateAtViewportCenter}
+          />
+        </Panel>
+        <Panel position="bottom-left" className="pointer-events-auto select-none">
+          <MasteryLegend />
         </Panel>
         <Background gap={16} size={1} color="var(--border-default)" />
         <Controls />
