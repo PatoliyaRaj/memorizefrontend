@@ -101,7 +101,7 @@ export default function PushEnrollmentBanner() {
               <Sparkles className="size-2.5" /> SMART SYSTEM OS ALERTS
             </div>
             <h3 className="text-sm font-bold text-text-primary">Enable Bedtime OS Notifications?</h3>
-            <p className="text-xs text-text-secondary leading-relaxed max-w-xl">
+            <p className="text-xs text-text-secondary leading-relaxed max-w-2xl">
               Get optimal learning tips and smart bedtime recall alerts 3 hours before sleep to tag your hippocampus—even when the browser is completely closed. No screen light within 60 minutes of bed, guaranteed.
             </p>
           </div>
