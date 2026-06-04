@@ -26,7 +26,7 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Drawer, DrawerContent } from "@/components/ui/drawer"
+import { Drawer, DrawerContent, DrawerTitle, DrawerDescription } from "@/components/ui/drawer"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/use-auth-store"
 import { type NotificationItem } from "@/services/notification-service"
@@ -484,6 +484,10 @@ function MobileSidebar({
   return (
     <Drawer open={open} onOpenChange={(v) => !v && onClose()} direction="left">
       <DrawerContent className="w-[84vw] max-w-[22rem] h-full flex flex-col border-r border-border-default bg-surface-base p-0 rounded-r-xl">
+        {/* Accessibility: visually hidden title/description for screen readers */}
+        <DrawerTitle className="sr-only">Navigation Sidebar</DrawerTitle>
+        <DrawerDescription className="sr-only">Main navigation menu for the Memorize app</DrawerDescription>
+
         {/* Close button row */}
         <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3 shrink-0">
           <div className="flex items-center gap-2.5">

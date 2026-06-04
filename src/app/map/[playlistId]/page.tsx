@@ -21,6 +21,7 @@ import ConceptNodes from '@/components/neural-map/ConceptNode'
 import RelationshipEdge from '@/components/neural-map/RelationshipEdge'
 import MapToolbar from '@/components/neural-map/MapToolbar'
 import MasteryLegend from '@/components/neural-map/MasteryLegend'
+import { DashboardShell } from '@/components/layout/dashboard/DashboardShell'
 import { getNodesByPlaylist, patchNodePosition, VisualNode } from '@/services/nodes-service'
 import { getEdgesByPlaylist, createEdge, deleteEdge } from '@/services/edges-service'
 import NodeSidebar from '../../../components/neural-map/NodeSidebar'
@@ -373,121 +374,130 @@ function MapCanvas() {
   const createPosition = sidebarState?.mode === 'create' ? sidebarState.position : null
 
   return (
-    <div className="relative h-[calc(100vh-64px)] w-full">
-      <ReactFlow
-        nodes={rfNodes}
-        edges={rfEdges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeDragStop={onNodeDragStop}
-        onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
-        onPaneContextMenu={onPaneContextMenu}
-        onEdgesDelete={onEdgesDelete}
-        onEdgeClick={onEdgeClick}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        fitView
-        panOnDrag
-      >
-        <Panel position="top-center" className="pointer-events-auto">
-          <MapToolbar
-            totalNodes={rfNodes.length}
-            masteredNodes={rfNodes.filter(n => n.data?.masteryLevel === 'mastered').length}
-            onAutoLayout={handleAutoLayout}
-            onTreeLayout={handleTreeLayout}
-            onResetToManual={handleResetToManual}
-            hasManualHistory={manualPositions !== null}
-            onFitView={() => fitView({ duration: 800 })}
-            showLabels={showLabels}
-            onToggleLabels={() => setShowLabels(prev => !prev)}
-            onAddNode={openCreateAtViewportCenter}
-          />
-        </Panel>
-        <Panel position="bottom-left" className="pointer-events-auto select-none">
-          <MasteryLegend />
-        </Panel>
-        <Background gap={16} size={1} color="var(--border-default)" />
-        <Controls />
-        <MiniMap
-          nodeColor={(n: any) => {
-            const mastery = n.data?.masteryLevel || 'unseen';
-            return `var(--mastery-${mastery}-text)`;
-          }}
-          bgColor="var(--surface-base)"
-          maskColor="var(--surface-void)"
-        />
-      </ReactFlow>
-
-      {contextMenu && (
-        <div
-          className="fixed z-60 min-w-48 rounded-xl border border-outline-variant/40 bg-surface-base/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.45)] backdrop-blur-md"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+    <div
+      className="h-[calc(100%+2rem)] md:h-[calc(100%+2.5rem)] lg:h-[calc(100%+3rem)] w-[calc(100%+2rem)] md:w-[calc(100%+2.5rem)] lg:w-[calc(100%+3rem)] -m-4 md:-m-5 lg:-m-6 overflow-hidden"
+      style={{ touchAction: 'none' }}
+    >
+      <div className="relative h-full w-full">
+        <ReactFlow
+          nodes={rfNodes}
+          edges={rfEdges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeDragStop={onNodeDragStop}
+          onNodeClick={onNodeClick}
+          onPaneClick={onPaneClick}
+          onPaneContextMenu={onPaneContextMenu}
+          onEdgesDelete={onEdgesDelete}
+          onEdgeClick={onEdgeClick}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          panOnDrag={true}
+          panOnScroll={false}
+          zoomOnPinch={true}
+          preventScrolling={true}
         >
-          <Button
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-text-primary transition-colors hover:bg-surface-container"
-            onClick={() => openCreateSidebar(contextMenu.flowPosition)}
-          >
-            <span className="material-symbols-outlined text-primary">add</span>
-            Add node here
-          </Button>
-          <Button
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-text-primary transition-colors hover:bg-surface-container"
-            onClick={openCreateAtViewportCenter}
-          >
-            <span className="material-symbols-outlined text-primary">center_focus_strong</span>
-            Add node at center
-          </Button>
-        </div>
-      )}
+          <Panel position="top-center" className="pointer-events-auto">
+            <MapToolbar
+              totalNodes={rfNodes.length}
+              masteredNodes={rfNodes.filter(n => n.data?.masteryLevel === 'mastered').length}
+              onAutoLayout={handleAutoLayout}
+              onTreeLayout={handleTreeLayout}
+              onResetToManual={handleResetToManual}
+              hasManualHistory={manualPositions !== null}
+              onFitView={() => fitView({ duration: 800 })}
+              showLabels={showLabels}
+              onToggleLabels={() => setShowLabels(prev => !prev)}
+              onAddNode={openCreateAtViewportCenter}
+            />
+          </Panel>
+          <Panel position="bottom-left" className="pointer-events-auto select-none">
+            <MasteryLegend />
+          </Panel>
+          <Background gap={16} size={1} color="var(--border-default)" />
+          <Controls className="!hidden md:!flex" />
+          <MiniMap
+            className="!hidden md:!block"
+            nodeColor={(n: any) => {
+              const mastery = n.data?.masteryLevel || 'unseen';
+              return `var(--mastery-${mastery}-text)`;
+            }}
+            bgColor="var(--surface-base)"
+            maskColor="var(--surface-void)"
+          />
+        </ReactFlow>
 
-      <NodeSidebar
-        playlistId={playlistId}
-        nodeId={sidebarNodeId}
-        createPosition={createPosition}
-        mode={sidebarState?.mode ?? null}
-        onClose={closeSidebar}
-        onCreated={(node: VisualNode) => {
-          const mastery = node.masteryLevel ?? node.mastery_level ?? 'unseen'
-          setRfNodes((current) => [...current, {
-            id: node.id,
-            type: 'concept',
-            position: {
-              x: node.posX !== undefined ? node.posX : (node.pos_x !== undefined ? node.pos_x : 0),
-              y: node.posY !== undefined ? node.posY : (node.pos_y !== undefined ? node.pos_y : 0)
-            },
-            data: {
-              label: node.title,
-              masteryLevel: mastery,
-              isMastered: mastery === 'mastered'
-            },
-          }])
-          setSidebarState({ mode: 'view', nodeId: node.id })
-        }}
-        onUpdated={(id, updates) => {
-          setRfNodes((nodes) =>
-            nodes.map((n) =>
-              n.id === id
-                ? {
-                  ...n,
-                  data: {
-                    ...n.data,
-                    label: updates.title ?? n.data.label,
-                    masteryLevel: updates.mastery_level ?? n.data.masteryLevel,
-                    isMastered: updates.mastery_level === 'mastered',
-                  },
-                }
-                : n
+        {contextMenu && (
+          <div
+            className="fixed z-60 min-w-48 rounded-xl border border-outline-variant/40 bg-surface-base/95 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.45)] backdrop-blur-md"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <Button
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-text-primary transition-colors hover:bg-surface-container"
+              onClick={() => openCreateSidebar(contextMenu.flowPosition)}
+            >
+              <span className="material-symbols-outlined text-primary">add</span>
+              Add node here
+            </Button>
+            <Button
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-text-primary transition-colors hover:bg-surface-container"
+              onClick={openCreateAtViewportCenter}
+            >
+              <span className="material-symbols-outlined text-primary">center_focus_strong</span>
+              Add node at center
+            </Button>
+          </div>
+        )}
+
+        <NodeSidebar
+          playlistId={playlistId}
+          nodeId={sidebarNodeId}
+          createPosition={createPosition}
+          mode={sidebarState?.mode ?? null}
+          onClose={closeSidebar}
+          onCreated={(node: VisualNode) => {
+            const mastery = node.masteryLevel ?? node.mastery_level ?? 'unseen'
+            setRfNodes((current) => [...current, {
+              id: node.id,
+              type: 'concept',
+              position: {
+                x: node.posX !== undefined ? node.posX : (node.pos_x !== undefined ? node.pos_x : 0),
+                y: node.posY !== undefined ? node.posY : (node.pos_y !== undefined ? node.pos_y : 0)
+              },
+              data: {
+                label: node.title,
+                masteryLevel: mastery,
+                isMastered: mastery === 'mastered'
+              },
+            }])
+            setSidebarState({ mode: 'view', nodeId: node.id })
+          }}
+          onUpdated={(id, updates) => {
+            setRfNodes((nodes) =>
+              nodes.map((n) =>
+                n.id === id
+                  ? {
+                      ...n,
+                      data: {
+                        ...n.data,
+                        label: updates.title ?? n.data.label,
+                        masteryLevel: updates.mastery_level ?? n.data.masteryLevel,
+                        isMastered: updates.mastery_level === 'mastered',
+                      },
+                    }
+                  : n
+              )
             )
-          )
-        }}
-        onDeleted={(id) => {
-          setRfNodes((nodes) => nodes.filter((n) => n.id !== id))
-          setRfEdges((edges) => edges.filter((e) => e.source !== id && e.target !== id))
-          closeSidebar()
-        }}
-      />
+          }}
+          onDeleted={(id) => {
+            setRfNodes((nodes) => nodes.filter((n) => n.id !== id))
+            setRfEdges((edges) => edges.filter((e) => e.source !== id && e.target !== id))
+            closeSidebar()
+          }}
+        />
+      </div>
     </div>
   )
 }
@@ -495,7 +505,9 @@ function MapCanvas() {
 export default function MapPage() {
   return (
     <ReactFlowProvider>
-      <MapCanvas />
+      <DashboardShell>
+        <MapCanvas />
+      </DashboardShell>
     </ReactFlowProvider>
   )
 }
