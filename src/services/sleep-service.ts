@@ -41,6 +41,21 @@ export async function getCircadianStatus() {
   return data.data as CircadianStatus;
 }
 
+export type UserProfile = {
+  userId: string;
+  learningStyle: 'visual' | 'auditory' | 'reading' | 'kinesthetic';
+  dailyGoalMin: number;
+  timezone: string;
+  sleepTime: string;
+  wakeTime: string;
+  onboardingDone: boolean;
+};
+
+export async function getUserProfile() {
+  const { data } = await apiClient.get('/api/sleep/profile');
+  return data.data as UserProfile | null;
+}
+
 export async function completeOnboarding(payload: {
   sleepTime: string;
   wakeTime: string;

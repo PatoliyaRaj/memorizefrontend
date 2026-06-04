@@ -34,7 +34,7 @@ export const siteConfig = {
       },
       {
         title: 'Settings',
-        href: '/dashboard/settings',
+        href: '/settings',
         icon: 'settings',
       },
     ],

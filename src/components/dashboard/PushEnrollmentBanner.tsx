@@ -49,6 +49,29 @@ export default function PushEnrollmentBanner() {
       const registration = await navigator.serviceWorker.register('/sw.js');
       console.log('[Service Worker] Service Worker registered:', registration);
 
+      // Await Service Worker activation if not already active to avoid:
+      // AbortError: Failed to execute 'subscribe' on 'PushManager': Subscription failed - no active Service Worker
+      if (!registration.active) {
+        await new Promise<void>((resolve) => {
+          const worker = registration.installing || registration.waiting;
+          if (!worker) {
+            resolve();
+            return;
+          }
+          if (worker.state === 'activated') {
+            resolve();
+            return;
+          }
+          const stateChangeHandler = () => {
+            if (worker.state === 'activated') {
+              worker.removeEventListener('statechange', stateChangeHandler);
+              resolve();
+            }
+          };
+          worker.addEventListener('statechange', stateChangeHandler);
+        });
+      }
+
       // Read public key from env, fallback to default for dev testing if missing
       const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BM_q4uPz...';
       

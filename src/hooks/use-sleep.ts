@@ -4,10 +4,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getSleepLogs,
   getCircadianStatus,
-  logSleep,
+  getUserProfile,
   completeOnboarding,
+  logSleep,
   SleepLog,
   CircadianStatus,
+  UserProfile,
 } from '../services/sleep-service';
 
 export function useSleepLogs() {
@@ -44,6 +46,13 @@ export function useLogSleepMutation() {
   });
 }
 
+export function useUserProfile() {
+  return useQuery<UserProfile | null>({
+    queryKey: ['userProfile'],
+    queryFn: getUserProfile,
+  });
+}
+
 export function useCompleteOnboardingMutation() {
   const queryClient = useQueryClient();
 
@@ -52,6 +61,7 @@ export function useCompleteOnboardingMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['circadianStatus'] });
       queryClient.invalidateQueries({ queryKey: ['sleepLogs'] });
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
     },
   });
 }
