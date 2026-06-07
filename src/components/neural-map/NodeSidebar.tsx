@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { SmartImportModal } from "@/components/smart-import/SmartImportModal";
 
 type SidebarMode = "view" | "create" | null;
 
@@ -98,6 +99,7 @@ export default function NodeSidebar({
 
   // Add Takeaway in content tab
   const [newTakeawayContent, setNewTakeawayContent] = useState("");
+  const [showImport, setShowImport] = useState(false);
 
   // Inline Delete state
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -658,8 +660,18 @@ export default function NodeSidebar({
                       </select>
                     </label>
 
-                    <label className="grid gap-1.5">
-                      <span className="font-mono text-xs uppercase tracking-wider text-text-secondary">Theory / Core Concept</span>
+                    <div className="grid gap-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-xs uppercase tracking-wider text-text-secondary">Theory / Core Concept</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowImport(true)}
+                          className="text-xs text-[#6BD8CB] hover:underline font-mono flex items-center gap-1 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-xs">download</span>
+                          Import from Notes
+                        </button>
+                      </div>
                       <textarea
                         value={theory}
                         onChange={(e) => triggerChange({ theory: e.target.value })}
@@ -667,7 +679,7 @@ export default function NodeSidebar({
                         rows={6}
                         className="w-full rounded-lg border border-border-default bg-[#060A09] p-3 text-sm text-text-primary outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary leading-relaxed placeholder:text-text-tertiary"
                       />
-                    </label>
+                    </div>
 
                     {/* Takeaways Dynamic List */}
                     <div className="grid gap-1.5">
@@ -1085,6 +1097,38 @@ export default function NodeSidebar({
             {confirmDelete ? "Confirm Deletion — Click Again" : "Delete Node Pathway"}
           </Button>
         </div>
+      )}
+
+      {showImport && nodeId && (
+        <SmartImportModal
+          nodeId={nodeId}
+          nodeTitle={title}
+          nodeType={nodeType || "concept"}
+          onSaved={() => {
+            setShowImport(false);
+            getNodeDetails(nodeId)
+              .then((response) => {
+                setTheory(response.theory || "");
+                setTakeaways(response.takeaways || []);
+                setEmotionalAnchor(response.emotional_anchor || "");
+                setReferences(response.references || []);
+                setImages(response.images || []);
+                setFiles(response.files || []);
+                setCardsDueCount(response.cards_due_count || 0);
+
+                if (originalDetailsRef.current) {
+                  originalDetailsRef.current.theory = response.theory || "";
+                  originalDetailsRef.current.takeaways = response.takeaways || [];
+                  originalDetailsRef.current.emotionalAnchor = response.emotional_anchor || "";
+                  originalDetailsRef.current.references = response.references || [];
+                  originalDetailsRef.current.images = response.images || [];
+                  originalDetailsRef.current.files = response.files || [];
+                }
+              })
+              .catch((err) => console.error("Failed to reload details", err));
+          }}
+          onClose={() => setShowImport(false)}
+        />
       )}
     </aside>
   );
