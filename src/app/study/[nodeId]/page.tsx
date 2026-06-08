@@ -11,6 +11,10 @@ import { cn } from '@/lib/utils'
 import { PartyPopperIcon, Timer, BedDouble } from 'lucide-react'
 import StudyWindowBanner from '@/components/dashboard/StudyWindowBanner'
 import { NapRecommendation } from '@/components/study/NapRecommendation'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeSanitize from 'rehype-sanitize'
+import { normalizeMarkdown } from '@/lib/markdown'
 
 function StudyPageContent() {
   const params = useParams()
@@ -28,6 +32,7 @@ function StudyPageContent() {
   const [showManage, setShowManage] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [hasAttemptedRecall, setHasAttemptedRecall] = useState(false)
 
   // Sleep warning / circadian status
   const [sleepWarning, setSleepWarning] = useState(false)
@@ -185,6 +190,7 @@ function StudyPageContent() {
     setSubmitting(false)
     setShowReveal(false)
     setAnswerText('')
+    setHasAttemptedRecall(false)
 
     // Backpressure check on completing 5 reviews
     const nextCount = sessionCardsCount + 1
@@ -436,6 +442,7 @@ function StudyPageContent() {
                 setIgnoreBackpressure(false)
                 setFeynmanCompleted(false)
                 setFeynmanText('')
+                setHasAttemptedRecall(false)
                 reset()
               }}
               className="flex-1 border-border-default text-text-primary hover:bg-[#1F312D]"
@@ -598,7 +605,11 @@ function StudyPageContent() {
                 </span>
                 <textarea
                   value={answerText}
-                  onChange={(e) => setAnswerText(e.target.value)}
+                  onChange={(e) => {
+                    setAnswerText(e.target.value)
+                    setHasAttemptedRecall(true)
+                  }}
+                  onFocus={() => setHasAttemptedRecall(true)}
                   className="w-full min-h-[180px] rounded-xl border border-border-default bg-[#060A09] p-4 text-sm md:text-base text-text-primary outline-none transition-all focus:border-[#6BD8CB] focus:ring-1 focus:ring-[#6BD8CB] placeholder:text-text-tertiary/60 leading-relaxed"
                   placeholder={modeParam === 'exam' ? "Write a short answer quickly! Hints and explanations are locked under exam rules." : "Draft everything you remember about this question to scientifically calibrate FSRS weights..."}
                   autoFocus
@@ -611,7 +622,14 @@ function StudyPageContent() {
                   className="bg-[#0D9488] text-white hover:bg-[#14B8A6] px-6 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-[0_4px_12px_rgba(13,148,136,0.2)]"
                 >
                   <span className="material-symbols-outlined text-sm">visibility</span>
-                  Reveal & Compare
+                  {hasAttemptedRecall ? (
+                    <span className="flex items-center gap-2">
+                      <span className="text-yellow-400 text-base">💡</span>
+                      Close eyes, hold your answer, then Reveal
+                    </span>
+                  ) : (
+                    'Reveal & Compare'
+                  )}
                 </Button>
               </div>
             </div>
@@ -635,23 +653,46 @@ function StudyPageContent() {
                   <span className="text-[9px] font-mono uppercase tracking-wider text-[#6BD8CB] mb-2 font-bold block border-b border-border-subtle pb-1">
                     Correct Synaptic Target
                   </span>
-                  <div className="text-sm text-text-primary leading-relaxed flex-1 font-semibold whitespace-pre-wrap">
-                    {card.answer}
+                  <div className="text-sm text-text-primary leading-relaxed flex-1 font-semibold [&_strong]:font-bold [&_strong]:text-text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1 [&_li]:my-0.5 [&_p]:my-0.5">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                      {normalizeMarkdown(card.answer)}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </div>
-
-              {/* Memory Elaboration Text (Hidden in Exam Mode) */}
-              {(card as any).explanation && modeParam !== 'exam' && (
-                <div className="rounded-xl border border-border-subtle bg-surface-void/40 p-4 space-y-1.5">
-                  <span className="text-[9px] font-mono uppercase tracking-widest text-[#9BBFBB] font-bold block">
-                    Memory Elaboration
-                  </span>
-                  <p className="text-xs text-text-secondary leading-relaxed">
-                    {(card as any).explanation}
-                  </p>
-                </div>
-              )}
+ 
+              {/* Memory Elaboration / Retrieval Cue (Hidden in Exam Mode) */}
+              {(card as any).explanation && modeParam !== 'exam' && (() => {
+                // explanation may be either: (a) a JSON string {subTopic, text} from Smart Import
+                //                         or (b) a plain string from manually created cards
+                let subTopic: string | null = null;
+                let explanationText         = (card as any).explanation as string;
+                try {
+                  const parsed = JSON.parse(explanationText);
+                  if (parsed?.text)     explanationText = parsed.text;
+                  if (parsed?.subTopic) subTopic        = parsed.subTopic;
+                } catch { /* plain string — use as-is */ }
+ 
+                return (
+                  <div className="rounded-xl border border-border-subtle bg-surface-void/40 p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-mono uppercase tracking-widest text-[#9BBFBB] font-bold block">
+                        Memory Hook — Why This Matters
+                      </span>
+                      {subTopic && (
+                        <span className="text-[9px] font-mono text-violet-400 bg-violet-950/30 border border-violet-800/50 px-2 py-0.5 rounded-full">
+                          {subTopic}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-text-secondary leading-relaxed [&_strong]:font-semibold [&_strong]:text-text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1 [&_li]:my-0.5 [&_p]:my-0.5">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                        {normalizeMarkdown(explanationText)}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Scientific Sliding Grade Panel */}
               <div className="rounded-xl border border-border-default bg-[#060A09] p-4">

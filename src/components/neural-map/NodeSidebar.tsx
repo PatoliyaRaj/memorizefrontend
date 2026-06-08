@@ -11,6 +11,10 @@ import { Input } from "@/components/ui/input";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { SmartImportModal } from "@/components/smart-import/SmartImportModal";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
+import { normalizeMarkdown, stripLeadingBullet } from "@/lib/markdown";
 
 type SidebarMode = "view" | "create" | null;
 
@@ -100,6 +104,7 @@ export default function NodeSidebar({
   // Add Takeaway in content tab
   const [newTakeawayContent, setNewTakeawayContent] = useState("");
   const [showImport, setShowImport] = useState(false);
+  const [theoryMode, setTheoryMode] = useState<"preview" | "edit">("preview");
 
   // Inline Delete state
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -662,7 +667,25 @@ export default function NodeSidebar({
 
                     <div className="grid gap-1.5">
                       <div className="flex justify-between items-center">
-                        <span className="font-mono text-xs uppercase tracking-wider text-text-secondary">Theory / Core Concept</span>
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-xs uppercase tracking-wider text-text-secondary">Theory / Core Concept</span>
+                          <div className="flex bg-[#060A09] rounded p-0.5 border border-border-default">
+                            {(["preview", "edit"] as const).map((m) => (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => setTheoryMode(m)}
+                                className={`text-[10px] px-2 py-0.5 rounded capitalize transition-colors font-mono font-bold ${
+                                  theoryMode === m
+                                    ? "bg-[#121C1A] text-[#6BD8CB]"
+                                    : "text-text-secondary hover:text-text-primary"
+                                }`}
+                              >
+                                {m}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                         <button
                           type="button"
                           onClick={() => setShowImport(true)}
@@ -672,13 +695,22 @@ export default function NodeSidebar({
                           Import from Notes
                         </button>
                       </div>
-                      <textarea
-                        value={theory}
-                        onChange={(e) => triggerChange({ theory: e.target.value })}
-                        placeholder="Detail the core theory behind this node..."
-                        rows={6}
-                        className="w-full rounded-lg border border-border-default bg-[#060A09] p-3 text-sm text-text-primary outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary leading-relaxed placeholder:text-text-tertiary"
-                      />
+
+                      {theoryMode === "edit" ? (
+                        <textarea
+                          value={theory}
+                          onChange={(e) => triggerChange({ theory: e.target.value })}
+                          placeholder="Detail the core theory behind this node..."
+                          rows={6}
+                          className="w-full rounded-lg border border-border-default bg-[#060A09] p-3 text-sm text-text-primary outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary leading-relaxed placeholder:text-text-tertiary"
+                        />
+                      ) : (
+                        <div className="w-full rounded-lg border border-border-default bg-[#060A09]/40 p-3 text-sm text-text-secondary min-h-[140px] max-h-[300px] overflow-y-auto leading-relaxed [&_h2]:text-[#6BD8CB] [&_h2]:text-sm [&_h2]:font-bold [&_h2]:mt-2 [&_h2]:mb-1 [&_strong]:font-semibold [&_strong]:text-text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1 [&_li]:my-0.5 [&_p]:my-0.5">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                            {normalizeMarkdown(theory) || "*No theory content details added yet.*"}
+                          </ReactMarkdown>
+                        </div>
+                      )}
                     </div>
 
                     {/* Takeaways Dynamic List */}
@@ -687,14 +719,21 @@ export default function NodeSidebar({
                       <ul className="space-y-2 mb-1">
                         {takeaways.map((takeaway, idx) => (
                           <li key={idx} className="flex items-start justify-between gap-3 p-2.5 rounded-lg bg-[#121C1A] border border-border-subtle text-sm text-text-secondary leading-relaxed">
-                            <span className="mt-0.5">• {takeaway}</span>
+                            <div className="flex-1 flex gap-2 items-start">
+                              <span className="mt-0.5 text-[#6BD8CB] shrink-0 font-bold">•</span>
+                              <div className="text-sm text-text-secondary leading-relaxed [&_strong]:font-semibold [&_strong]:text-text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1 [&_li]:my-0.5 [&_p]:my-0.5">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                                  {normalizeMarkdown(stripLeadingBullet(takeaway))}
+                                </ReactMarkdown>
+                              </div>
+                            </div>
                             <button
                               type="button"
                               onClick={() => {
                                 const newTakeaways = takeaways.filter((_, i) => i !== idx);
                                 triggerChange({ takeaways: newTakeaways });
                               }}
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1 rounded transition-colors shrink-0"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1 rounded transition-colors shrink-0 mt-0.5"
                             >
                               <span className="material-symbols-outlined text-sm">delete</span>
                             </button>
@@ -744,11 +783,12 @@ export default function NodeSidebar({
 
                     <label className="grid gap-1.5">
                       <span className="font-mono text-xs uppercase tracking-wider text-text-secondary">Emotional Anchor</span>
-                      <Input
+                      <textarea
                         value={emotionalAnchor}
                         onChange={(e) => triggerChange({ emotionalAnchor: e.target.value })}
                         placeholder="Mnemonics or extreme associations to help memory recall..."
-                        className="bg-[#060A09] border-border-default text-text-primary text-sm"
+                        rows={2}
+                        className="w-full rounded-lg border border-border-default bg-[#060A09] p-3 text-sm text-text-primary outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary leading-relaxed placeholder:text-text-tertiary"
                       />
                     </label>
                   </div>

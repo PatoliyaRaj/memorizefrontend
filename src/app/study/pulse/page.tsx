@@ -17,6 +17,10 @@ import {
   Timer,
   BedDouble
 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeSanitize from 'rehype-sanitize'
+import { normalizeMarkdown } from '@/lib/markdown'
 
 function StudyPulsePageContent() {
   const router = useRouter()
@@ -636,23 +640,46 @@ function StudyPulsePageContent() {
                   <span className="text-[9px] font-mono uppercase tracking-wider text-[#6BD8CB] mb-2 font-bold block border-b border-border-subtle pb-1">
                     Correct Synaptic Target
                   </span>
-                  <div className="text-sm text-text-primary leading-relaxed flex-1 font-semibold whitespace-pre-wrap font-body">
-                    {card.answer}
+                  <div className="text-sm text-text-primary leading-relaxed flex-1 font-semibold [&_strong]:font-bold [&_strong]:text-text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1 [&_li]:my-0.5 [&_p]:my-0.5 font-body">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                      {normalizeMarkdown(card.answer)}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </div>
 
               {/* Memory Elaboration Text (Hidden in Exam Mode) */}
-              {card.explanation && modeParam !== 'exam' && (
-                <div className="rounded-xl border border-border-subtle bg-surface-void/40 p-4 space-y-1.5">
-                  <span className="text-[9px] font-mono uppercase tracking-widest text-[#9BBFBB] font-bold block">
-                    Memory Elaboration
-                  </span>
-                  <p className="text-xs text-text-secondary leading-relaxed font-body">
-                    {card.explanation}
-                  </p>
-                </div>
-              )}
+              {card.explanation && modeParam !== 'exam' && (() => {
+                // explanation may be either: (a) a JSON string {subTopic, text} from Smart Import
+                //                         or (b) a plain string from manually created cards
+                let subTopic: string | null = null;
+                let explanationText         = card.explanation;
+                try {
+                  const parsed = JSON.parse(explanationText);
+                  if (parsed?.text)     explanationText = parsed.text;
+                  if (parsed?.subTopic) subTopic        = parsed.subTopic;
+                } catch { /* plain string — use as-is */ }
+
+                return (
+                  <div className="rounded-xl border border-border-subtle bg-surface-void/40 p-4 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-mono uppercase tracking-widest text-[#9BBFBB] font-bold block">
+                        Memory Elaboration
+                      </span>
+                      {subTopic && (
+                        <span className="text-[9px] font-mono text-violet-400 bg-violet-950/30 border border-violet-800/50 px-2 py-0.5 rounded-full">
+                          {subTopic}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-text-secondary leading-relaxed [&_strong]:font-semibold [&_strong]:text-text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1 [&_li]:my-0.5 [&_p]:my-0.5 font-body">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                        {normalizeMarkdown(explanationText)}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* FSRS Calibration Slider */}
               <div className="rounded-xl border border-border-default bg-[#060A09] p-4">
