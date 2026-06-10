@@ -11,10 +11,27 @@ import { Input } from "@/components/ui/input";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { SmartImportModal } from "@/components/smart-import/SmartImportModal";
+import { ZenReaderModal } from "@/components/smart-import/ZenReaderModal";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import { normalizeMarkdown, stripLeadingBullet } from "@/lib/markdown";
+import {
+  X,
+  Network,
+  Trash2,
+  Brain,
+  Play,
+  BookOpen,
+  Upload,
+  Link2,
+  PlayCircle,
+  FileText,
+  File,
+  Image as LucideImage,
+  AlertTriangle,
+  Paperclip
+} from "lucide-react";
 
 type SidebarMode = "view" | "create" | null;
 
@@ -71,6 +88,22 @@ export default function NodeSidebar({
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"content" | "cards" | "references" | "assets">("content");
 
+  const [isOpen, setIsOpen] = useState(false);
+  const [renderMode, setRenderMode] = useState<SidebarMode>(null);
+
+  // Handle slide-in/out transitions
+  useEffect(() => {
+    if (mode) {
+      setRenderMode(mode);
+      const t = setTimeout(() => setIsOpen(true), 16);
+      return () => clearTimeout(t);
+    } else {
+      setIsOpen(false);
+      const t = setTimeout(() => setRenderMode(null), 300);
+      return () => clearTimeout(t);
+    }
+  }, [mode]);
+
   // Create Mode Form State
   const [createForm, setCreateForm] = useState<CreateNodeFormState>(() => defaultCreateForm(createPosition));
   const [newTakeawayCreate, setNewTakeawayCreate] = useState("");
@@ -104,6 +137,7 @@ export default function NodeSidebar({
   // Add Takeaway in content tab
   const [newTakeawayContent, setNewTakeawayContent] = useState("");
   const [showImport, setShowImport] = useState(false);
+  const [showZenReader, setShowZenReader] = useState(false);
   const [theoryMode, setTheoryMode] = useState<"preview" | "edit">("preview");
 
   // Inline Delete state
@@ -124,6 +158,10 @@ export default function NodeSidebar({
     images: NodeImage[];
     files: NodeFile[];
   } | null>(null);
+
+  const thingsToRememberMarkdown = useMemo(() => {
+    return takeaways.map((t) => `- ${stripLeadingBullet(t)}`).join("\n");
+  }, [takeaways]);
 
   const latestValuesRef = useRef({
     title,
@@ -370,18 +408,26 @@ export default function NodeSidebar({
 
 
 
-  if (!mode) return null;
+  if (!renderMode) return null;
 
   return (
-    <aside className="fixed right-0 top-0 z-50 h-full w-full border-l border-border-default bg-[#0B1210]/95 shadow-[0_24px_80px_rgba(0,0,0,0.85)] backdrop-blur-xl sm:w-105 lg:w-115 text-text-primary flex flex-col font-body">
+    <aside
+      className={cn(
+        "fixed right-0 top-0 z-50 h-full w-full border-l border-border-default bg-[#0B1210]/95 shadow-[0_24px_80px_rgba(0,0,0,0.85)] backdrop-blur-xl sm:w-105 lg:w-115 text-text-primary flex flex-col font-body transform",
+        isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+      )}
+      style={{
+        transition: "transform 350ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
       {/* Sidebar Header */}
       <div className="flex items-center justify-between border-b border-border-default px-5 py-4 bg-[#121C1A]/50">
         <div>
           <div className="flex items-center gap-2">
             <p className="font-mono text-xs uppercase tracking-widest text-text-secondary">
-              {mode === "create" ? "Create Node" : "Node Details"}
+              {renderMode === "create" ? "Create Node" : "Node Details"}
             </p>
-            {mode === "view" && (
+            {renderMode === "view" && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono border border-border-subtle bg-surface-void">
                 <span
                   className={cn(
@@ -406,7 +452,7 @@ export default function NodeSidebar({
             )}
           </div>
           <h2 className="font-display text-xl font-bold text-text-primary tracking-tight mt-0.5">
-            {mode === "create" ? "New Canvas Node" : title || "Loading..."}
+            {renderMode === "create" ? "New Canvas Node" : title || "Loading..."}
           </h2>
         </div>
 
@@ -415,19 +461,19 @@ export default function NodeSidebar({
           variant="ghost"
           size="icon-sm"
           onClick={onClose}
-          className="text-text-secondary hover:text-text-primary hover:bg-[#1F312D] rounded-full"
+          className="text-text-secondary hover:text-text-primary hover:bg-[#1F312D] rounded-full flex items-center justify-center cursor-pointer"
         >
-          <span className="material-symbols-outlined text-lg">close</span>
+          <X className="w-4.5 h-4.5" />
         </Button>
       </div>
 
       {/* Main Sidebar Scrollable Body */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
-        {mode === "create" ? (
+      <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">
+        {renderMode === "create" ? (
           <div className="space-y-4">
             <div className="rounded-xl border border-border-default bg-[#121C1A]/40 p-4 space-y-2">
               <h4 className="font-display text-sm font-semibold text-text-primary flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[#6BD8CB] text-base">architecture</span>
+                <Network className="w-4 h-4 text-primary" />
                 Sequential Creation
               </h4>
               <p className="text-xs text-text-secondary leading-relaxed">
@@ -502,9 +548,9 @@ export default function NodeSidebar({
                       <button
                         type="button"
                         onClick={() => setCreateForm(current => ({ ...current, takeaways: current.takeaways.filter((_, i) => i !== idx) }))}
-                        className="text-red-400 hover:text-red-300"
+                        className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-red-500/10 transition-colors flex items-center justify-center cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-sm">delete</span>
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </li>
                   ))}
@@ -585,7 +631,7 @@ export default function NodeSidebar({
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-display text-sm font-semibold text-text-primary flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[#6BD8CB] text-base animate-pulse">psychology</span>
+                        <Brain className="w-4 h-4 text-primary animate-pulse" />
                         FSRS Spaced Repetition
                       </h4>
                       <p className="text-xs text-text-secondary mt-0.5">
@@ -613,10 +659,10 @@ export default function NodeSidebar({
                         router.push(`/study/${nodeId}`);
                       }
                     }}
-                    className="w-full bg-[#0D9488] text-white hover:bg-[#14B8A6] font-bold py-2 rounded-lg flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(13,148,136,0.25)] border border-[#0D9488]/40"
+                    className="w-full bg-[#0D9488] text-white hover:bg-[#14B8A6] font-bold py-2 rounded-lg flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(13,148,136,0.25)] border border-[#0D9488]/40 cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-sm">play_arrow</span>
-                    ⚡ Start Active Recall ({cardsDueCount} Cards Due)
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    Start Active Recall ({cardsDueCount} Cards Due)
                   </Button>
                 </div>
 
@@ -666,16 +712,16 @@ export default function NodeSidebar({
                     </label>
 
                     <div className="grid gap-1.5">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono text-xs uppercase tracking-wider text-text-secondary">Theory / Core Concept</span>
+                      <div className="flex justify-between items-center border-b border-border-default pb-2">
+                        <span className="font-mono text-xs uppercase tracking-wider text-text-secondary font-bold">Theory</span>
+                        <div className="flex items-center gap-2">
                           <div className="flex bg-[#060A09] rounded p-0.5 border border-border-default">
                             {(["preview", "edit"] as const).map((m) => (
                               <button
                                 key={m}
                                 type="button"
                                 onClick={() => setTheoryMode(m)}
-                                className={`text-[10px] px-2 py-0.5 rounded capitalize transition-colors font-mono font-bold ${
+                                className={`text-[10px] px-2 py-0.5 rounded capitalize transition-colors font-mono font-bold cursor-pointer ${
                                   theoryMode === m
                                     ? "bg-[#121C1A] text-[#6BD8CB]"
                                     : "text-text-secondary hover:text-text-primary"
@@ -685,15 +731,25 @@ export default function NodeSidebar({
                               </button>
                             ))}
                           </div>
+                          <span className="text-text-tertiary text-[10px]">|</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowZenReader(true)}
+                            className="text-xs text-[#6BD8CB] hover:text-[#89f5e7] hover:underline font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                          >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            Zen Read
+                          </button>
+                          <span className="text-text-tertiary text-[10px]">|</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowImport(true)}
+                            className="text-xs text-[#6BD8CB] hover:text-[#89f5e7] hover:underline font-mono flex items-center gap-1 transition-colors cursor-pointer"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            Import
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowImport(true)}
-                          className="text-xs text-[#6BD8CB] hover:underline font-mono flex items-center gap-1 transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-xs">download</span>
-                          Import from Notes
-                        </button>
                       </div>
 
                       {theoryMode === "edit" ? (
@@ -733,9 +789,9 @@ export default function NodeSidebar({
                                 const newTakeaways = takeaways.filter((_, i) => i !== idx);
                                 triggerChange({ takeaways: newTakeaways });
                               }}
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1 rounded transition-colors shrink-0 mt-0.5"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1.5 rounded transition-colors shrink-0 mt-0.5 flex items-center justify-center cursor-pointer"
                             >
-                              <span className="material-symbols-outlined text-sm">delete</span>
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </li>
                         ))}
@@ -795,7 +851,7 @@ export default function NodeSidebar({
                 )}
 
                 {/* TAB 2: CARDS */}
-                {activeTab === "cards" && mode === "view" && nodeId && (
+                {activeTab === "cards" && renderMode === "view" && nodeId && (
                   <NodeCardsTab
                     nodeId={nodeId}
                     onCardsChange={() => {
@@ -816,11 +872,12 @@ export default function NodeSidebar({
                       {references.map((ref, idx) => (
                         <div key={idx} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-[#121C1A] border border-border-subtle text-xs">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="material-symbols-outlined text-[#6BD8CB]">
-                              {ref.type === "video" && "play_circle"}
-                              {ref.type === "article" && "article"}
-                              {ref.type === "doc" && "description"}
-                              {ref.type === "book" && "menu_book"}
+                            <span className="text-[#6BD8CB] flex items-center shrink-0">
+                              {ref.type === "video" && <PlayCircle className="w-4 h-4" />}
+                              {ref.type === "article" && <FileText className="w-4 h-4" />}
+                              {ref.type === "doc" && <File className="w-4 h-4" />}
+                              {ref.type === "book" && <BookOpen className="w-4 h-4" />}
+                              {!["video", "article", "doc", "book"].includes(ref.type || "") && <Link2 className="w-4 h-4" />}
                             </span>
                             <div className="min-w-0">
                               <p className="font-semibold text-text-primary truncate">{ref.title}</p>
@@ -840,9 +897,9 @@ export default function NodeSidebar({
                               const updatedRefs = references.filter((_, i) => i !== idx);
                               triggerChange({ references: updatedRefs });
                             }}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1.5 rounded transition-colors shrink-0"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1.5 rounded transition-colors shrink-0 flex items-center justify-center cursor-pointer"
                           >
-                            <span className="material-symbols-outlined text-sm">delete</span>
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ))}
@@ -856,7 +913,7 @@ export default function NodeSidebar({
                     {/* Add Reference Inline Form */}
                     <div className="rounded-xl border border-border-subtle bg-[#121C1A]/50 p-4 space-y-3">
                       <h5 className="font-display text-xs font-semibold text-text-primary flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[#6BD8CB] text-xs">add_link</span>
+                        <Link2 className="w-3.5 h-3.5 text-primary" />
                         Attach Reference Link
                       </h5>
 
@@ -943,9 +1000,9 @@ export default function NodeSidebar({
                                     const updatedImgs = images.filter((_, i) => i !== idx);
                                     triggerChange({ images: updatedImgs });
                                   }}
-                                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-black/60 hover:bg-red-500 text-white p-1 rounded-lg transition-all"
+                                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-black/60 hover:bg-red-500 text-white p-1.5 rounded-lg transition-all flex items-center justify-center cursor-pointer"
                                 >
-                                  <span className="material-symbols-outlined text-xs">delete</span>
+                                  <Trash2 className="w-3 h-3" />
                                 </button>
                               </div>
                               <div className="p-2 text-[10px] leading-snug">
@@ -964,7 +1021,7 @@ export default function NodeSidebar({
                       {/* Add Image Inline Form */}
                       <div className="rounded-xl border border-border-subtle bg-[#121C1A]/50 p-4 space-y-3">
                         <h5 className="font-display text-xs font-semibold text-text-primary flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[#6BD8CB] text-xs">image</span>
+                          <LucideImage className="w-3.5 h-3.5 text-primary" />
                           Link Image Asset
                         </h5>
 
@@ -1029,7 +1086,7 @@ export default function NodeSidebar({
                       {files.map((file, idx) => (
                         <div key={idx} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-[#121C1A] border border-border-subtle text-xs">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="material-symbols-outlined text-[#6BD8CB]">attachment</span>
+                            <Paperclip className="w-4 h-4 text-primary shrink-0" />
                             <div className="min-w-0">
                               <a
                                 href={file.url}
@@ -1048,9 +1105,9 @@ export default function NodeSidebar({
                               const updatedFiles = files.filter((_, i) => i !== idx);
                               triggerChange({ files: updatedFiles });
                             }}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1.5 rounded transition-colors shrink-0"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1.5 rounded transition-colors shrink-0 flex items-center justify-center cursor-pointer"
                           >
-                            <span className="material-symbols-outlined text-sm">delete</span>
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ))}
@@ -1063,7 +1120,7 @@ export default function NodeSidebar({
                       {/* Add File Inline Form */}
                       <div className="rounded-xl border border-border-subtle bg-[#121C1A]/50 p-4 space-y-3">
                         <h5 className="font-display text-xs font-semibold text-text-primary flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[#6BD8CB] text-xs">attachment</span>
+                          <Paperclip className="w-3.5 h-3.5 text-primary" />
                           Attach Reference File
                         </h5>
 
@@ -1118,22 +1175,24 @@ export default function NodeSidebar({
       </div>
 
       {/* Sidebar Footer containing Delete Button */}
-      {mode === "view" && !loading && (
+      {renderMode === "view" && !loading && (
         <div className="border-t border-border-default p-4 bg-[#060A09]/60 flex items-center justify-between">
           <Button
             type="button"
             onClick={handleDeleteNode}
             disabled={saving}
             className={cn(
-              "flex-1 transition-all duration-300 font-bold",
+              "flex-1 transition-all duration-300 font-bold flex items-center justify-center cursor-pointer",
               confirmDelete
                 ? "bg-red-600 hover:bg-red-700 text-white"
                 : "bg-red-500/10 hover:bg-red-500/20 text-red-400 focus-visible:ring-red-500/30"
             )}
           >
-            <span className="material-symbols-outlined text-sm mr-1.5">
-              {confirmDelete ? "warning" : "delete"}
-            </span>
+            {confirmDelete ? (
+              <AlertTriangle className="w-4 h-4 mr-1.5 shrink-0" />
+            ) : (
+              <Trash2 className="w-4 h-4 mr-1.5 shrink-0" />
+            )}
             {confirmDelete ? "Confirm Deletion — Click Again" : "Delete Node Pathway"}
           </Button>
         </div>
@@ -1168,6 +1227,16 @@ export default function NodeSidebar({
               .catch((err) => console.error("Failed to reload details", err));
           }}
           onClose={() => setShowImport(false)}
+        />
+      )}
+
+      {showZenReader && (
+        <ZenReaderModal
+          nodeTitle={title}
+          theoryContent={theory}
+          thingsToRemember={thingsToRememberMarkdown}
+          emotionalAnchor={emotionalAnchor}
+          onClose={() => setShowZenReader(false)}
         />
       )}
     </aside>

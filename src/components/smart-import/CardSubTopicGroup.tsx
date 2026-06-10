@@ -5,26 +5,22 @@
  *
  * Security: rehype-sanitize added to ALL ReactMarkdown instances.
  * This prevents XSS via LLM-hallucinated HTML (e.g., <img onerror='alert(1)'>)
- * from executing in the student's browser. rehype-sanitize uses the GitHub
- * allow-list by default — strips all event handlers and script tags while
- * preserving safe formatting (bold, lists, code, arrows).
+ * from executing in the student's browser.
  *
  * Features:
  *  - Cards grouped by subTopic in collapsible <details> sections
- *  - "▼ Why?" expandable explanation panel (memory hook)
+ *  - Expandable explanation panel (memory hook)
  *  - Inline edit mode for question + answer
  *  - Length warning for overlong Q/A
- *  - Card type badge (definition, property, cause, etc.)
- *
- * IMPORTANT: Before using this component ensure:
- *   npm install rehype-sanitize --save   (in /frontend)
+ *  - Card type badge
  */
 
 import { useState }    from 'react';
 import ReactMarkdown   from 'react-markdown';
 import remarkGfm       from 'remark-gfm';
-import rehypeSanitize  from 'rehype-sanitize'; // ← SECURITY: XSS prevention
+import rehypeSanitize  from 'rehype-sanitize'; 
 import { normalizeMarkdown } from '@/lib/markdown';
+import { Brain, ChevronDown, ChevronUp, Edit2, Trash2, Check, X, AlertTriangle } from 'lucide-react';
 
 interface CardItem {
   id:           string;
@@ -44,10 +40,6 @@ interface Props {
   onToggleEdit: (id: string) => void;
 }
 
-/**
- * Parse explanation — supports both plain string and JSON format.
- * The backend saves explanation as JSON: { subTopic: string, text: string }
- */
 function parseExplanation(raw?: string): string {
   if (!raw) return '';
   try {
@@ -69,7 +61,6 @@ export function CardSubTopicGroup({ cards, onToggleKeep, onEditCard, onToggleEdi
     });
   };
 
-  // Group cards by subTopic
   const groups = cards.reduce((acc, c) => {
     const t = c.subTopic ?? 'General';
     if (!acc[t]) acc[t] = [];
@@ -83,19 +74,19 @@ export function CardSubTopicGroup({ cards, onToggleKeep, onEditCard, onToggleEdi
         const activeCount = topicCards.filter(c => c.keep).length;
 
         return (
-          <details key={topic} open className="border border-slate-800 rounded-lg overflow-hidden">
-            <summary className="flex justify-between items-center p-3 bg-slate-900/60 cursor-pointer hover:bg-slate-900 select-none list-none">
+          <details key={topic} open className="border border-border-default rounded-lg overflow-hidden bg-surface-void font-body">
+            <summary className="flex justify-between items-center p-3 bg-surface-base cursor-pointer hover:bg-surface-hover select-none list-none [&::-webkit-details-marker]:hidden">
               <div className="flex items-center gap-2 font-medium">
-                <span className="text-slate-600 text-[10px]">▶</span>
-                <span className="text-sm font-semibold text-slate-200">{topic}</span>
-                <span className="text-xs text-slate-500 font-normal">({topicCards.length} card{topicCards.length !== 1 ? 's' : ''})</span>
+                <Brain className="w-3.5 h-3.5 text-primary" />
+                <span className="text-sm font-display font-bold text-text-primary">{topic}</span>
+                <span className="text-xs text-text-tertiary font-mono">({topicCards.length} card{topicCards.length !== 1 ? 's' : ''})</span>
               </div>
-              <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">
+              <span className="text-[10px] text-text-secondary bg-surface-void px-2 py-0.5 rounded-full border border-border-default font-mono">
                 {activeCount}/{topicCards.length} kept
               </span>
             </summary>
 
-            <div className="p-3 space-y-3 bg-slate-950/10">
+            <div className="p-3 space-y-3 bg-surface-void/50 border-t border-border-default/50">
               {topicCards.map(card => {
                 const hasLengthWarning = card.question.length > 120 || card.answer.length > 600;
                 const explanationText  = parseExplanation(card.explanation);
@@ -106,36 +97,39 @@ export function CardSubTopicGroup({ cards, onToggleKeep, onEditCard, onToggleEdi
                     key={card.id}
                     className={`border rounded-lg transition-all ${
                       card.keep
-                        ? 'bg-slate-950 border-slate-800'
-                        : 'bg-slate-900/20 border-slate-900 opacity-40'
+                        ? 'bg-surface-base border-border-default shadow-sm'
+                        : 'bg-surface-base/20 border-border-default/30 opacity-40'
                     }`}
                   >
                     {/* Card Header */}
                     <div className="flex justify-between items-center p-3 pb-0">
-                      <span className="text-[10px] text-slate-500 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded">
+                      <span className="text-[9px] text-primary bg-primary/10 border border-border-brand px-1.5 py-0.5 rounded font-mono uppercase tracking-wider">
                         {card.type ?? 'free_recall'}
                       </span>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 font-mono text-[10px]">
                         {explanationText && (
                           <button
                             onClick={() => toggleExplanation(card.id)}
-                            className="text-[10px] text-violet-400 hover:text-violet-300 font-medium"
+                            className="text-tertiary hover:text-tertiary/80 font-medium flex items-center gap-0.5 cursor-pointer"
                           >
-                            {showExplanation ? '▲ Hide' : '▼ Why?'}
+                            {showExplanation ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            Why?
                           </button>
                         )}
                         <button
                           onClick={() => onToggleEdit(card.id)}
-                          className="text-[10px] text-slate-400 hover:text-slate-200"
+                          className="text-text-secondary hover:text-text-primary cursor-pointer flex items-center gap-0.5"
                         >
+                          <Edit2 className="w-3 h-3" />
                           {card.editing ? 'Done' : 'Edit'}
                         </button>
                         <button
                           onClick={() => onToggleKeep(card.id)}
-                          className={`text-[10px] font-bold ${
-                            card.keep ? 'text-red-400 hover:text-red-300' : 'text-emerald-400 hover:text-emerald-300'
+                          className={`font-bold cursor-pointer flex items-center gap-0.5 ${
+                            card.keep ? 'text-error-text hover:text-error-text/80' : 'text-success-text hover:text-success-text/80'
                           }`}
                         >
+                          {card.keep ? <X className="w-3 h-3" /> : <Check className="w-3 h-3" />}
                           {card.keep ? 'Remove' : 'Keep'}
                         </button>
                       </div>
@@ -143,8 +137,9 @@ export function CardSubTopicGroup({ cards, onToggleKeep, onEditCard, onToggleEdi
 
                     {/* Length Warning */}
                     {hasLengthWarning && card.keep && (
-                      <div className="mx-3 mt-2 text-[10px] text-yellow-500 bg-yellow-950/20 border border-yellow-900 px-2 py-1 rounded">
-                        ⚠️ Question &gt;120 chars or answer &gt;600 chars — consider shortening.
+                      <div className="mx-3 mt-2 text-[10px] text-warning-text bg-warning-bg border border-warning-border px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 font-mono">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                        Question &gt;120 chars or answer &gt;600 chars — consider shortening.
                       </div>
                     )}
 
@@ -157,27 +152,23 @@ export function CardSubTopicGroup({ cards, onToggleKeep, onEditCard, onToggleEdi
                             value={card.question}
                             onChange={e => onEditCard(card.id, 'question', e.target.value)}
                             placeholder="Question (max 120 chars)"
-                            className="w-full p-2 bg-slate-900 border border-slate-800 rounded text-xs text-slate-200 focus:outline-none focus:border-teal-600"
+                            className="w-full p-2 bg-surface-void border border-border-default rounded text-xs text-text-primary focus:outline-none focus:border-border-brand font-body"
                           />
                           <textarea
                             value={card.answer}
                             onChange={e => onEditCard(card.id, 'answer', e.target.value)}
                             placeholder="Answer (supports **bold**, → arrows, bullet lists)"
                             rows={3}
-                            className="w-full p-2 bg-slate-900 border border-slate-800 rounded text-xs text-slate-200 resize-none focus:outline-none focus:border-teal-600 font-mono"
+                            className="w-full p-2 bg-surface-void border border-border-default rounded text-xs text-text-primary resize-none focus:outline-none focus:border-border-brand font-mono leading-relaxed"
                           />
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <p className="text-xs font-semibold text-slate-100">
-                            Q: {card.question || <span className="text-red-400 italic">Empty</span>}
+                          <p className="text-xs font-semibold text-text-primary">
+                            Q: {card.question || <span className="text-error-text italic">Empty</span>}
                           </p>
-                          <div className="text-xs text-slate-300 prose prose-invert prose-xs max-w-none [&_strong]:text-slate-100 [&_p]:mt-0 [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-4 [&_li]:my-0.5">
-                            <span className="text-slate-500 font-semibold not-prose">A: </span>
-                            {/*
-                              SECURITY: rehypeSanitize strips malicious HTML/scripts from LLM output.
-                              Prevents stored XSS via hallucinated <img onerror="..."> or <script> tags.
-                            */}
+                          <div className="text-xs text-text-secondary prose prose-invert prose-xs max-w-none [&_strong]:text-text-primary [&_p]:mt-0 [&_ul]:mt-1 [&_ul]:list-disc [&_ul]:pl-4 [&_li]:my-0.5 [&_li]:marker:text-primary leading-relaxed">
+                            <span className="text-text-tertiary font-semibold not-prose font-mono">A: </span>
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               rehypePlugins={[rehypeSanitize]}
@@ -188,14 +179,13 @@ export function CardSubTopicGroup({ cards, onToggleKeep, onEditCard, onToggleEdi
                         </div>
                       )}
 
-                      {/* Explanation Panel — "Why this matters" memory hook */}
+                      {/* Explanation Panel */}
                       {showExplanation && explanationText && (
-                        <div className="mt-3 pt-3 border-t border-slate-800">
-                          <p className="text-[10px] text-violet-400 font-bold uppercase tracking-wide mb-1.5">
-                            Why this matters
+                        <div className="mt-3 pt-3 border-t border-border-default">
+                          <p className="text-[9px] text-tertiary font-mono font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                            <Brain className="w-3 h-3 text-tertiary" /> Why this matters
                           </p>
-                          <div className="text-xs text-slate-400 prose prose-invert prose-xs max-w-none [&_strong]:text-violet-300 [&_p]:mt-0 [&_ul]:list-disc [&_ul]:pl-4 [&_li]:my-0.5">
-                            {/* SECURITY: rehypeSanitize on explanation field too */}
+                          <div className="text-xs text-text-secondary prose prose-invert prose-xs max-w-none [&_strong]:text-tertiary [&_p]:mt-0 [&_ul]:list-disc [&_ul]:pl-4 [&_li]:my-0.5 leading-relaxed">
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               rehypePlugins={[rehypeSanitize]}
