@@ -15,6 +15,7 @@ const emptyDraft = {
   question: '',
   answer: '',
   explanation: '',
+  questionType: 'free_recall' as Card['questionType'],
 };
 
 function parseExplanation(raw?: string | null): { subTopic: string; text: string; isJson: boolean } {
@@ -187,6 +188,7 @@ export default function NodeCardsTab({ nodeId, onCardsChange }: { nodeId: string
         question: newCard.question.trim(),
         answer: newCard.answer.trim(),
         explanation: newCard.explanation.trim() || undefined,
+        questionType: newCard.questionType,
       });
       setCards((prev) => [...prev, created]);
       setNewCard(emptyDraft);
@@ -206,6 +208,7 @@ export default function NodeCardsTab({ nodeId, onCardsChange }: { nodeId: string
       question: card.question,
       answer: card.answer,
       explanation: parsed.text,
+      questionType: card.questionType || 'free_recall',
     });
   };
 
@@ -231,6 +234,7 @@ export default function NodeCardsTab({ nodeId, onCardsChange }: { nodeId: string
         question: draft.question.trim(),
         answer: draft.answer.trim(),
         explanation: finalExplanation || undefined,
+        questionType: draft.questionType,
       });
       setCards((prev) => prev.map((card) => (card.id === cardId ? updated : card)));
       setEditingCardId(null);
@@ -278,6 +282,28 @@ export default function NodeCardsTab({ nodeId, onCardsChange }: { nodeId: string
             placeholder="Card question"
             className="bg-[#0B1210] border-border-default"
           />
+          <div className="space-y-1 my-1">
+            <p className="text-[10px] uppercase font-mono tracking-wider text-text-tertiary">Question Type</p>
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {Object.keys(questionTypeLabels).map((type) => {
+                const isSelected = newCard.questionType === type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setNewCard((prev) => ({ ...prev, questionType: type as any }))}
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-all ${
+                      isSelected
+                        ? `${questionTypeStyles[type]} border-current shadow-[0_0_10px_rgba(20,184,166,0.1)] font-semibold`
+                        : 'bg-[#0B1210] border-border-default text-text-secondary hover:text-text-primary hover:border-border-subtle'
+                    }`}
+                  >
+                    {questionTypeLabels[type]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="flex flex-col">
             <MarkdownToolbar
               textareaRef={newAnswerRef}
@@ -346,6 +372,28 @@ export default function NodeCardsTab({ nodeId, onCardsChange }: { nodeId: string
                       onChange={(e) => setDraft((prev) => ({ ...prev, question: e.target.value }))}
                       className="bg-[#0B1210] border-border-default"
                     />
+                    <div className="space-y-1 my-1">
+                      <p className="text-[10px] uppercase font-mono tracking-wider text-text-tertiary">Question Type</p>
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {Object.keys(questionTypeLabels).map((type) => {
+                          const isSelected = draft.questionType === type;
+                          return (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => setDraft((prev) => ({ ...prev, questionType: type as any }))}
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-all ${
+                                isSelected
+                                  ? `${questionTypeStyles[type]} border-current shadow-[0_0_10px_rgba(20,184,166,0.1)] font-semibold`
+                                  : 'bg-[#0B1210] border-border-default text-text-secondary hover:text-text-primary hover:border-border-subtle'
+                              }`}
+                            >
+                              {questionTypeLabels[type]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                     <div className="flex flex-col">
                       <MarkdownToolbar
                         textareaRef={editAnswerRef}

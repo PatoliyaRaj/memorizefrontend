@@ -23,10 +23,12 @@ import MapToolbar from '@/components/neural-map/MapToolbar'
 import MasteryLegend from '@/components/neural-map/MasteryLegend'
 import { DashboardShell } from '@/components/layout/dashboard/DashboardShell'
 import { getNodesByPlaylist, patchNodePosition, VisualNode } from '@/services/nodes-service'
-import { getEdgesByPlaylist, createEdge, deleteEdge } from '@/services/edges-service'
+import { getEdgesByPlaylist, createEdge, deleteEdge, updateEdge } from '@/services/edges-service'
 import NodeSidebar from '../../../components/neural-map/NodeSidebar'
 import { Button } from '@/components/ui/button'
 import { toastError, toastSuccess } from '@/lib/toast'
+import { X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const nodeTypes = { concept: ConceptNodes }
 const edgeTypes = { relational: RelationshipEdge }
@@ -76,6 +78,7 @@ function MapCanvas() {
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null)
   const [nodeDraft, setNodeDraft] = useState<NodeDraft>(initialDraft)
   const [showLabels, setShowLabels] = useState(true)
+  const [editingEdge, setEditingEdge] = useState<{ id: string; edgeType: string; label: string } | null>(null)
 
   const [rfNodes, setRfNodes, onNodesChange] = useNodesState([] as Node[])
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState([] as Edge[])
@@ -111,6 +114,7 @@ function MapCanvas() {
           targetHandle: e.targetHandle || null,
           animated: true,
           type: showLabels ? 'relational' : 'default',
+          label: e.label || undefined,
           data: { edgeType: e.edgeType || e.edge_type || 'prerequisite_of' },
           style: { stroke: 'var(--border-brand)', strokeWidth: 2.5 }
         }))
@@ -181,6 +185,8 @@ function MapCanvas() {
     const newEdge = addEdge({
       ...params,
       animated: true,
+      type: showLabels ? 'relational' : 'default',
+      data: { edgeType: 'prerequisite_of' },
       style: { stroke: 'var(--border-brand)', strokeWidth: 2 }
     } as any, rfEdges)
     const tempEdgeId = newEdge[newEdge.length - 1]?.id
@@ -201,12 +207,15 @@ function MapCanvas() {
           id: created.id,
           sourceHandle: created.sourceHandle,
           targetHandle: created.targetHandle,
+          type: showLabels ? 'relational' : 'default',
+          label: created.label || undefined,
+          data: { edgeType: created.edge_type || 'prerequisite_of' },
         }) : ed))
       }
     } catch (e) {
       console.error(e)
     }
-  }, [rfEdges])
+  }, [rfEdges, showLabels])
 
   const onEdgesDelete = useCallback(async (edgesToDelete: Edge[]) => {
     for (const edge of edgesToDelete) {
@@ -219,18 +228,57 @@ function MapCanvas() {
     }
   }, [])
 
-  const onEdgeClick = useCallback(async (event: React.MouseEvent, edge: Edge) => {
-    event.stopPropagation()
+  const onEdgeClick = useCallback((event: any, edge: Edge) => {
+    event.stopPropagation();
+    const type = (edge.data?.edgeType || 'prerequisite_of') as string;
+    const label = (edge.label || '') as string;
+    setEditingEdge({
+      id: edge.id,
+      edgeType: type,
+      label: label,
+    });
+  }, []);
+
+  const handleUpdateEdge = async () => {
+    if (!editingEdge) return;
+    try {
+      const updated = await updateEdge(editingEdge.id, {
+        edge_type: editingEdge.edgeType,
+        label: editingEdge.label.trim(),
+      });
+
+      setRfEdges((eds) =>
+        eds.map((ed) =>
+          ed.id === editingEdge.id
+            ? {
+                ...ed,
+                label: updated.label || undefined,
+                data: { edgeType: updated.edge_type || 'prerequisite_of' },
+              }
+            : ed
+        )
+      );
+
+      toastSuccess('Connection updated.');
+      setEditingEdge(null);
+    } catch (err) {
+      toastError('Failed to update connection.');
+    }
+  };
+
+  const handleDeleteEdge = async () => {
+    if (!editingEdge) return;
     if (window.confirm("Remove this connection wire?")) {
       try {
-        await deleteEdge(edge.id)
-        setRfEdges((eds) => eds.filter((e) => e.id !== edge.id))
-        toastSuccess("Connection removed.")
-      } catch (e) {
-        toastError("Failed to remove connection.")
+        await deleteEdge(editingEdge.id);
+        setRfEdges((eds) => eds.filter((e) => e.id !== editingEdge.id));
+        toastSuccess("Connection removed.");
+        setEditingEdge(null);
+      } catch (err) {
+        toastError("Failed to remove connection.");
       }
     }
-  }, [setRfEdges])
+  };
 
   const [manualPositions, setManualPositions] = useState<Record<string, { x: number; y: number }> | null>(null);
 
@@ -497,6 +545,86 @@ function MapCanvas() {
             closeSidebar()
           }}
         />
+
+        {editingEdge && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl rounded-2xl border border-border-default bg-[#0B1210]/95 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.85)] text-text-primary space-y-5 flex flex-col font-body transform animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center border-b border-border-default pb-3">
+                <div>
+                  <h3 className="font-display text-lg font-bold text-text-primary">Edit Connection Wire</h3>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-text-secondary mt-0.5">Configure Neural Relationship</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingEdge(null)}
+                  className="p-1 rounded-full text-text-secondary hover:text-text-primary hover:bg-[#1F312D] transition-colors"
+                >
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <span className="font-mono text-xs uppercase tracking-wider text-text-secondary">Connection Type</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { type: 'prerequisite_of', label: 'Prerequisite', color: 'border-teal-500/20 text-teal-300 bg-teal-500/10' },
+                      { type: 'leads_to', label: 'Leads To', color: 'border-amber-500/20 text-amber-300 bg-amber-500/10' },
+                      { type: 'related_to', label: 'Related To', color: 'border-indigo-500/20 text-indigo-300 bg-indigo-500/10' },
+                      { type: 'example_of', label: 'Example Of', color: 'border-emerald-500/20 text-emerald-300 bg-emerald-500/10' },
+                      { type: 'exception_to', label: 'Exception To', color: 'border-rose-500/20 text-rose-300 bg-rose-500/10' },
+                      { type: 'part_of', label: 'Part Of', color: 'border-sky-500/20 text-sky-300 bg-sky-500/10' },
+                    ].map((opt) => {
+                      const isSelected = editingEdge.edgeType === opt.type;
+                      return (
+                        <button
+                          key={opt.type}
+                          type="button"
+                          onClick={() => setEditingEdge(prev => prev ? { ...prev, edgeType: opt.type } : null)}
+                          className={cn(
+                            'px-3 py-2.5 rounded-xl border text-xs font-semibold text-center transition-all outline-none focus:ring-1 focus:ring-teal-500/30',
+                            isSelected
+                              ? `${opt.color} border-current shadow-[0_0_10px_rgba(20,184,166,0.1)] scale-102 font-bold`
+                              : 'bg-[#060A09] border-border-default text-text-secondary hover:text-text-primary hover:border-border-subtle'
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <label className="grid gap-1.5">
+                  <span className="font-mono text-xs uppercase tracking-wider text-[#9BBFBB]">Custom Label (Optional)</span>
+                  <input
+                    type="text"
+                    value={editingEdge.label}
+                    onChange={(e) => setEditingEdge(prev => prev ? { ...prev, label: e.target.value } : null)}
+                    placeholder="E.g. exception details, strength note..."
+                    className="w-full h-10 px-3 rounded-xl border border-border-default bg-[#060A09] text-sm text-text-primary outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 placeholder:text-text-tertiary/60"
+                  />
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={handleDeleteEdge}
+                  variant="outline"
+                  className="flex-1 border-red-500/30 text-red-300 hover:bg-red-500/10 h-10 rounded-xl"
+                >
+                  Delete Connection
+                </Button>
+                <Button
+                  onClick={handleUpdateEdge}
+                  className="flex-1 bg-[#14B8A6] text-black hover:bg-[#2DD4BF] font-bold h-10 rounded-xl"
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

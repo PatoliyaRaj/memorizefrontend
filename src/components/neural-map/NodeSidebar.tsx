@@ -30,7 +30,9 @@ import {
   File,
   Image as LucideImage,
   AlertTriangle,
-  Paperclip
+  Paperclip,
+  Star,
+  Tag
 } from "lucide-react";
 
 type SidebarMode = "view" | "create" | null;
@@ -119,6 +121,9 @@ export default function NodeSidebar({
   const [images, setImages] = useState<NodeImage[]>([]);
   const [files, setFiles] = useState<NodeFile[]>([]);
   const [cardsDueCount, setCardsDueCount] = useState(0);
+  const [isImportant, setIsImportant] = useState(false);
+  const [examRelevance, setExamRelevance] = useState<string[]>([]);
+  const [newExamTag, setNewExamTag] = useState("");
 
   // References inline form
   const [newRefTitle, setNewRefTitle] = useState("");
@@ -157,6 +162,8 @@ export default function NodeSidebar({
     references: NodeReference[];
     images: NodeImage[];
     files: NodeFile[];
+    isImportant: boolean;
+    examRelevance: string[];
   } | null>(null);
 
   const thingsToRememberMarkdown = useMemo(() => {
@@ -172,6 +179,8 @@ export default function NodeSidebar({
     references,
     images,
     files,
+    isImportant,
+    examRelevance,
   });
 
   // Track latest states in Ref to prevent closure issues in auto-save
@@ -185,8 +194,10 @@ export default function NodeSidebar({
       references,
       images,
       files,
+      isImportant,
+      examRelevance,
     };
-  }, [title, nodeType, theory, takeaways, emotionalAnchor, references, images, files]);
+  }, [title, nodeType, theory, takeaways, emotionalAnchor, references, images, files, isImportant, examRelevance]);
 
   // Load Node Details
   useEffect(() => {
@@ -221,6 +232,8 @@ export default function NodeSidebar({
             setImages(response.images || []);
             setFiles(response.files || []);
             setCardsDueCount(response.cards_due_count || 0);
+            setIsImportant(response.isImportant ?? false);
+            setExamRelevance(response.examRelevance ?? []);
 
             // Seed original values
             originalDetailsRef.current = {
@@ -233,6 +246,8 @@ export default function NodeSidebar({
               references: response.references || [],
               images: response.images || [],
               files: response.files || [],
+              isImportant: response.isImportant ?? false,
+              examRelevance: response.examRelevance ?? [],
             };
           })
           .catch((err) => {
@@ -277,6 +292,9 @@ export default function NodeSidebar({
     if (updatedFields.hasOwnProperty("images")) setImages(updatedFields.images!);
     if (updatedFields.hasOwnProperty("files")) setFiles(updatedFields.files!);
 
+    if (updatedFields.hasOwnProperty("isImportant")) setIsImportant(updatedFields.isImportant!);
+    if (updatedFields.hasOwnProperty("examRelevance")) setExamRelevance(updatedFields.examRelevance!);
+
     setSaveStatus("drafting");
 
     if (saveTimerRef.current) {
@@ -310,6 +328,8 @@ export default function NodeSidebar({
           references: merged.references,
           images: merged.images,
           files: merged.files,
+          isImportant: merged.isImportant,
+          examRelevance: merged.examRelevance,
         });
 
         // Set new original ref value
@@ -323,6 +343,8 @@ export default function NodeSidebar({
           references: detailsUpdate.references || [],
           images: detailsUpdate.images || [],
           files: detailsUpdate.files || [],
+          isImportant: detailsUpdate.isImportant ?? false,
+          examRelevance: detailsUpdate.examRelevance ?? [],
         };
 
         setSaveStatus("saved");
@@ -456,15 +478,30 @@ export default function NodeSidebar({
           </h2>
         </div>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={onClose}
-          className="text-text-secondary hover:text-text-primary hover:bg-[#1F312D] rounded-full flex items-center justify-center cursor-pointer"
-        >
-          <X className="w-4.5 h-4.5" />
-        </Button>
+        <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-75 duration-300">
+          {renderMode === "view" && (
+            <button
+              type="button"
+              onClick={() => triggerChange({ isImportant: !isImportant })}
+              className={cn(
+                "p-1.5 rounded-full transition-all flex items-center justify-center cursor-pointer hover:bg-[#1F312D] active:scale-95",
+                isImportant ? "text-amber-400 hover:text-amber-300" : "text-text-secondary hover:text-text-primary"
+              )}
+              title={isImportant ? "Marked as Important" : "Mark as Important"}
+            >
+              <Star className={cn("w-4.5 h-4.5 transition-transform", isImportant && "fill-current scale-110")} />
+            </button>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={onClose}
+            className="text-text-secondary hover:text-text-primary hover:bg-[#1F312D] rounded-full flex items-center justify-center cursor-pointer"
+          >
+            <X className="w-4.5 h-4.5" />
+          </Button>
+        </div>
       </div>
 
       {/* Main Sidebar Scrollable Body */}
@@ -847,6 +884,69 @@ export default function NodeSidebar({
                         className="w-full rounded-lg border border-border-default bg-[#060A09] p-3 text-sm text-text-primary outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary leading-relaxed placeholder:text-text-tertiary"
                       />
                     </label>
+
+                    <div className="grid gap-1.5 mt-2 border-t border-border-default pt-3">
+                      <span className="font-mono text-xs uppercase tracking-wider text-text-secondary flex items-center gap-1.5 font-bold">
+                        <Tag className="w-3.5 h-3.5" />
+                        Exam Relevance & Tags
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 mb-1">
+                        {examRelevance.map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono border border-teal-500/20 bg-teal-500/10 text-teal-300"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newTags = examRelevance.filter((_, i) => i !== idx);
+                                triggerChange({ examRelevance: newTags });
+                              }}
+                              className="text-teal-400 hover:text-teal-200 shrink-0 font-bold ml-0.5 focus:outline-none"
+                            >
+                              &times;
+                            </button>
+                          </span>
+                        ))}
+                        {examRelevance.length === 0 && (
+                          <span className="text-xs text-text-tertiary italic">No exam tags added yet.</span>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          value={newExamTag}
+                          onChange={(e) => setNewExamTag(e.target.value)}
+                          placeholder="E.g. GATE, JEE, Midterm..."
+                          className="bg-[#060A09] border-border-default flex-1 text-sm placeholder:text-text-tertiary"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              if (newExamTag.trim() && !examRelevance.includes(newExamTag.trim())) {
+                                const newList = [...examRelevance, newExamTag.trim()];
+                                triggerChange({ examRelevance: newList });
+                                setNewExamTag("");
+                              }
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (newExamTag.trim() && !examRelevance.includes(newExamTag.trim())) {
+                              const newList = [...examRelevance, newExamTag.trim()];
+                              triggerChange({ examRelevance: newList });
+                              setNewExamTag("");
+                            }
+                          }}
+                          className="border-border-default hover:bg-[#1F312D] text-text-primary"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
 

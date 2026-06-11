@@ -67,7 +67,7 @@ export async function createCard(nodeId: string, payload: { question: string; an
   return data as Card
 }
 
-export async function updateCard(cardId: string, payload: { question?: string; answer?: string; explanation?: string; orderIndex?: number }) {
+export async function updateCard(cardId: string, payload: { question?: string; answer?: string; explanation?: string; questionType?: Card['questionType']; orderIndex?: number }) {
   const { data } = await apiClient.patch(`/api/cards/${cardId}`, payload)
   return data as Card
 }

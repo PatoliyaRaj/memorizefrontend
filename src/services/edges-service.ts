@@ -7,6 +7,7 @@ export type VisualEdge = {
   sourceHandle?: string | null
   targetHandle?: string | null
   edge_type?: string
+  label?: string | null
 }
 
 export async function getEdgesByPlaylist(playlistId: string) {
@@ -28,5 +29,10 @@ export async function createEdge(payload: {
 export async function deleteEdge(id: string) {
   const { data } = await apiClient.delete(`/api/edges/${id}`)
   return data
+}
+
+export async function updateEdge(id: string, payload: { edge_type: string; label?: string }) {
+  const { data } = await apiClient.put(`/api/edges/${id}`, payload)
+  return data as VisualEdge
 }
 
