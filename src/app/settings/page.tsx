@@ -23,8 +23,118 @@ import {
   BookOpen,
   Brain,
   Sliders,
+  Compass,
+  GraduationCap,
+  Code,
+  Terminal,
+  Briefcase,
+  Rocket,
+  TrendingUp,
+  Award,
+  FlaskConical,
+  Presentation,
+  Stethoscope,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const OCCUPATIONS = [
+  {
+    id: 'school',
+    label: 'School Student',
+    description: 'K-12, high school, or board exams',
+    icon: BookOpen,
+    academicLevel: 'school',
+    studyGoals: 'exams',
+  },
+  {
+    id: 'student',
+    label: 'College Student',
+    description: 'Undergraduate, graduate, or JEE/NEET/UPSC',
+    icon: GraduationCap,
+    academicLevel: 'college',
+    studyGoals: 'academic_growth',
+  },
+  {
+    id: 'developer',
+    label: 'Software Developer',
+    description: 'Coding, software engineering, upskilling',
+    icon: Code,
+    academicLevel: 'graduate',
+    studyGoals: 'professional_dev',
+  },
+  {
+    id: 'senior_developer',
+    label: 'Senior Tech / Lead',
+    description: 'System design, architecture, leadership',
+    icon: Terminal,
+    academicLevel: 'graduate',
+    studyGoals: 'advanced_tech',
+  },
+  {
+    id: 'business_student',
+    label: 'Business / Management',
+    description: 'BBA, MBA, finance, or consulting studies',
+    icon: Briefcase,
+    academicLevel: 'college',
+    studyGoals: 'business_management',
+  },
+  {
+    id: 'entrepreneur',
+    label: 'Entrepreneur / Founder',
+    description: 'Startups, pitch decks, product management',
+    icon: Rocket,
+    academicLevel: 'professional',
+    studyGoals: 'startup_launch',
+  },
+  {
+    id: 'investor',
+    label: 'Investor / Trader',
+    description: 'Stock market, portfolio management, trading',
+    icon: TrendingUp,
+    academicLevel: 'professional',
+    studyGoals: 'market_investing',
+  },
+  {
+    id: 'executive',
+    label: 'Executive / Lead',
+    description: 'Strategic planning, CEO/CTO leadership',
+    icon: Award,
+    academicLevel: 'professional',
+    studyGoals: 'executive_strategy',
+  },
+  {
+    id: 'researcher',
+    label: 'Researcher / Scholar',
+    description: 'PhD, scientist, papers, deep analysis',
+    icon: FlaskConical,
+    academicLevel: 'post_graduate',
+    studyGoals: 'academic_research',
+  },
+  {
+    id: 'teacher',
+    label: 'Teacher / Educator',
+    description: 'Lesson planning, lecturing, pedagogy',
+    icon: Presentation,
+    academicLevel: 'graduate',
+    studyGoals: 'education_delivery',
+  },
+  {
+    id: 'doctor',
+    label: 'Medical / Healthcare',
+    description: 'MBBS, residency, clinical diagnosis, nursing',
+    icon: Stethoscope,
+    academicLevel: 'post_graduate',
+    studyGoals: 'medical_licensing',
+  },
+  {
+    id: 'professional',
+    label: 'General Professional',
+    description: 'Upskilling, career pivot, life-long learning',
+    icon: Compass,
+    academicLevel: 'professional',
+    studyGoals: 'career_pivot',
+  },
+];
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -41,6 +151,9 @@ export default function SettingsPage() {
   const [wakeTime, setWakeTime] = React.useState('06:30');
   const [learningStyle, setLearningStyle] = React.useState<'visual' | 'auditory' | 'reading' | 'kinesthetic'>('visual');
   const [dailyGoalMin, setDailyGoalMin] = React.useState(15);
+  const [occupation, setOccupation] = React.useState('student');
+  const [academicLevel, setAcademicLevel] = React.useState('college');
+  const [studyGoals, setStudyGoals] = React.useState('academic_growth');
   
   // Push state
   const [pushSupported, setPushSupported] = React.useState(false);
@@ -55,6 +168,9 @@ export default function SettingsPage() {
       setWakeTime(profile.wakeTime || '06:30');
       setLearningStyle(profile.learningStyle || 'visual');
       setDailyGoalMin(profile.dailyGoalMin || 15);
+      setOccupation(profile.occupation || 'student');
+      setAcademicLevel(profile.academicLevel || 'college');
+      setStudyGoals(profile.studyGoals || 'academic_growth');
     }
   }, [profile]);
   
@@ -81,6 +197,9 @@ export default function SettingsPage() {
         timezone,
         learningStyle,
         dailyGoalMin,
+        occupation,
+        academicLevel,
+        studyGoals,
       });
       toast.success('🎉 Settings saved successfully!');
     } catch (err) {
@@ -283,6 +402,53 @@ export default function SettingsPage() {
                           <option value={45}>45 minutes (Extreme)</option>
                         </select>
                       </div>
+                    </div>
+
+                    {/* Occupation Selection */}
+                    <div className="space-y-2 pt-4 border-t border-border-subtle/50">
+                      <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+                        <Compass className="size-3.5 text-text-tertiary" />
+                        Primary Occupation / Focus
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                        {OCCUPATIONS.map((occ) => {
+                          const Icon = occ.icon;
+                          const isSelected = occupation === occ.id;
+                          return (
+                            <button
+                              key={occ.id}
+                              type="button"
+                              onClick={() => {
+                                setOccupation(occ.id);
+                                setAcademicLevel(occ.academicLevel);
+                                setStudyGoals(occ.studyGoals);
+                              }}
+                              className={cn(
+                                "flex items-start text-left p-3 rounded-xl border transition-all duration-200 group relative overflow-hidden",
+                                isSelected
+                                  ? "bg-[#14B8A6]/10 border-[#14B8A6]/45 text-[#E8F5F3] shadow-[0_0_12px_rgba(107,216,203,0.1)]"
+                                  : "bg-[#0B1210]/60 border-[#14B8A6]/10 text-[#9BBFBB] hover:border-[#14B8A6]/20 hover:bg-[#1F312D]/40"
+                              )}
+                            >
+                              <div className={cn(
+                                "p-2 rounded-lg mr-3 transition-colors",
+                                isSelected
+                                  ? "bg-[#14B8A6]/20 text-[#6bd8cb]"
+                                  : "bg-[#121C1A] text-[#5C8A85] group-hover:text-[#9BBFBB]"
+                              )}>
+                                <Icon className="h-4 w-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-xs font-bold truncate transition-colors group-hover:text-[#E8F5F3]">{occ.label}</h3>
+                                <p className="text-[10px] text-[#5C8A85] mt-0.5 line-clamp-2 leading-relaxed">{occ.description}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[10px] text-text-tertiary leading-relaxed mt-2">
+                        💡 Selecting a profile focus customizes the AI card generation format and taxonomy difficulty (e.g., technical equations for developers, trade stop-losses for investors, clinical cases for medical study).
+                      </p>
                     </div>
                   </div>
 

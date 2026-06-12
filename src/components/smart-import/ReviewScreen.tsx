@@ -146,6 +146,7 @@ export function ReviewScreen({ result, nodeId, nodeTitle, onBack, onSaved, onRet
     question: '',
     answer:   '',
     subTopic: 'Manual',
+    questionType: 'free_recall',
     type:     'definition',
     keep:     true,
     editing:  true,
@@ -170,7 +171,7 @@ export function ReviewScreen({ result, nodeId, nodeTitle, onBack, onSaved, onRet
         cards: keptCards.map(c => ({
           question:     c.question,
           answer:       c.answer,
-          questionType: 'free_recall',
+          questionType: c.questionType || 'free_recall',
           subTopic:     c.subTopic,
           explanation:  c.explanation,
         })),

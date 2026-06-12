@@ -21,6 +21,7 @@ export interface ImportCard {
   answer:       string;
   subTopic?:    string;
   explanation?: string;
+  questionType?: string;
   type?:        string;
 }
 

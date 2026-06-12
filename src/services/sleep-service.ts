@@ -49,6 +49,9 @@ export type UserProfile = {
   sleepTime: string;
   wakeTime: string;
   onboardingDone: boolean;
+  academicLevel?: string | null;
+  studyGoals?: string | null;
+  occupation?: string | null;
 };
 
 export async function getUserProfile() {
@@ -62,6 +65,9 @@ export async function completeOnboarding(payload: {
   timezone: string;
   learningStyle?: 'visual' | 'auditory' | 'reading' | 'kinesthetic';
   dailyGoalMin?: number;
+  academicLevel?: string;
+  studyGoals?: string;
+  occupation?: string;
 }) {
   const { data } = await apiClient.post('/api/sleep/onboarding', payload);
   return data.data;
